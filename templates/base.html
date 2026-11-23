@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}MAHADEV TRANSPORT — Goods & Logistics Portal{% endblock %}</title>
+  <style>
+    :root {
+      --navy: #0f294a;
+      --blue: #1d4ed8;
+      --crimson: #b91c1c;
+      --gold: #d97706;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --border: #cbd5e1;
+      --success: #15803d;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", Roboto, "Noto Sans Devanagari", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+    .topbar {
+      background: linear-gradient(120deg, var(--navy) 0%, #1e3a8a 58%, var(--crimson) 100%);
+      color: #fff;
+      padding: 14px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 4px 14px rgba(15, 41, 74, 0.25);
+    }
+    .brand-title { font-size: 1.5rem; font-weight: 900; letter-spacing: 0.5px; }
+    .tagline { font-size: 0.88rem; color: #fde68a; font-weight: 600; margin-top: 2px; }
+    .director-box {
+      background: rgba(255, 255, 255, 0.14);
+      border-left: 4px solid #fbbf24;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+    }
+    .container { max-width: 1320px; margin: 18px auto 40px; padding: 0 16px; }
+    .flash-list { margin-bottom: 14px; display: grid; gap: 8px; }
+    .flash {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .flash.success { background: #dcfce7; color: #14532d; border: 1px solid #86efac; }
+    .flash.danger { background: #fee2e2; color: #7f1d1d; border: 1px solid #fca5a5; }
+    .flash.info { background: #dbeafe; color: #1e3a8a; border: 1px solid #93c5fd; }
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 18px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+      margin-bottom: 18px;
+    }
+    .card-header {
+      font-size: 1.08rem;
+      font-weight: 800;
+      color: var(--navy);
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 8px;
+      margin-bottom: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn {
+      display: inline-block;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 0.86rem;
+    }
+    .btn-primary { background: var(--crimson); color: #fff; }
+    .btn-navy { background: var(--navy); color: #fff; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-outline { background: #fff; color: var(--navy); border: 1px solid var(--navy); }
+    .btn-sm { padding: 5px 9px; font-size: 0.78rem; }
+    input, select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #94a3b8;
+      border-radius: 7px;
+      font-size: 0.92rem;
+    }
+    input[readonly] { background: #f1f5f9; font-weight: 700; color: var(--navy); }
+    label { display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    th, td { border: 1px solid #cbd5e1; padding: 7px 9px; text-align: left; }
+    th { background: var(--navy); color: #fff; }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <div class="brand-title">महादेव TRANSPORT • MAHADEV TRANSPORT</div>
+      <div class="tagline">भरोसेमंद माल ढुलाई, समय पर डिलीवरी — Reliable Freight & Seamless Logistics Partner</div>
+    </div>
+    <div class="director-box">
+      <div><strong>Director / संचालक:</strong> Prakash Rai (प्रकाश राय)</div>
+      <div style="font-size: 0.78rem; opacity: 0.92;">Goods Transport & Logistics • Automated Billing</div>
+    </div>
+  </header>
+
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-list">
+          {% for category, msg in messages %}
+            <div class="flash {{ category }}">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

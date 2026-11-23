@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — MAHADEV TRANSPORT{% endblock %}
+
+{% block extra_head %}
+<style>
+  .nav-strip {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .kpi {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .kpi .lbl { font-size: 0.8rem; color: var(--muted); font-weight: 700; }
+  .kpi .val { font-size: 1.4rem; font-weight: 900; color: var(--navy); margin-top: 4px; }
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+    gap: 10px;
+  }
+  .auto-summary-bar {
+    margin-top: 12px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .db-pill {
+    background: #dcfce7;
+    color: #14532d;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="nav-strip">
+  <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+    <span class="db-pill">🛡️ {{ db_mode }}</span>
+    <a href="{{ url_for('print_register', date=date_filter) }}" target="_blank" class="btn btn-navy">
+      📋 Print 16-Col Register (रजिस्टर प्रिंट)
+    </a>
+    <a href="{{ url_for('export_csv') }}" class="btn btn-success">
+      ⬇️ Backup CSV (डेटा बैकअप)
+    </a>
+  </div>
+  <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+    <a href="#password-settings" class="btn btn-outline">🔑 Set / Change Password</a>
+    <a href="{{ url_for('logout') }}" class="btn btn-primary">🚪 Logout</a>
+  </div>
+</div>
+
+<!-- KPI CARDS -->
+<div class="kpi-grid">
+  <div class="kpi">
+    <div class="lbl">Total Dispatches / कुल ट्रिप</div>
+    <div class="val">{{ totals.count }}</div>
+  </div>
+  <div class="kpi">
+    <div class="lbl">Total Freight / कुल भाड़ा</div>
+    <div class="val" style="color: var(--success);">₹{{ "{:,.2f}".format(totals.freight) }}</div>
+  </div>
+  <div class="kpi">
+    <div class="lbl">Total Advance + Diesel + A/c / कुल कटौती</div>
+    <div class="val" style="color: var(--crimson);">₹{{ "{:,.2f}".format(totals.deduction) }}</div>
+  </div>
+  <div class="kpi">
+    <div class="lbl">Net Payable Balance / कुल शेष राशि</div>
+    <div class="val">₹{{ "{:,.2f}".format(totals.balance) }}</div>
+  </div>
+</div>
+
+<!-- AUTOMATED CHALLAN / DISPATCH ENTRY FORM -->
+<div class="card">
+  <div class="card-header">
+    <span>➕ नया चालान व डिस्पैच जोड़ें / Add Automated Challan & Dispatch</span>
+    <span style="font-size: 0.8rem; color: var(--success);">✓ Auto Sr. No., Auto Date & Auto Calculation</span>
+  </div>
+  <form method="POST" action="{{ url_for('add_dispatch') }}">
+    <div class="form-grid">
+      <div>
+        <label>Sr. No. / क्रम संख्या (Auto)</label>
+        <input type="number" name="sr_no" value="{{ next_sr }}" readonly />
+      </div>
+      <div>
+        <label>Challan / Bilty No. (बिल्टी नं.)</label>
+        <input type="text" name="challan_no" value="{{ next_challan }}" required />
+      </div>
+      <div>
+        <label>Date / दिनांक (Auto)</label>
+        <input type="date" name="dispatch_date" value="{{ today_str }}" required />
+      </div>
+      <div>
+        <label>Vehicle No. / गाड़ी नं.</label>
+        <input type="text" name="vehicle_no" placeholder="e.g. TR04GJ-5299" required />
+      </div>
+      <div>
+        <label>Driver Name / ड्राइवर नाम</label>
+        <input type="text" name="driver_name" placeholder="Driver Name" required />
+      </div>
+      <div>
+        <label>Driver Mobile / ड्राइवर मोबाइल</label>
+        <input type="text" name="driver_mobile" placeholder="10-digit mobile" />
+      </div>
+      <div>
+        <label>Owner Mobile / मालिक मोबाइल</label>
+        <input type="text" name="owner_mobile" placeholder="Optional" />
+      </div>
+      <div>
+        <label>From / कहाँ से</label>
+        <input type="text" name="from_location" placeholder="Origin Plant / City" required />
+      </div>
+      <div>
+        <label>To / कहाँ तक</label>
+        <input type="text" name="to_location" placeholder="Destination / Party" required />
+      </div>
+      <div>
+        <label>Material / माल का विवरण</label>
+        <input type="text" name="material" value="Goods / माल" required />
+      </div>
+      <div>
+        <label>Weight / Qty (MT/Unit)</label>
+        <input type="number" step="0.01" id="qty" name="qty" value="30" oninput="autoCalc()" required />
+      </div>
+      <div>
+        <label>Receive Weight / प्राप्ति वजन</label>
+        <input type="text" name="receive_weight" placeholder="Optional" />
+      </div>
+      <div>
+        <label>Rate (₹ per MT/Unit)</label>
+        <input type="number" step="0.01" id="rate" name="rate" value="1870" oninput="autoCalc()" required />
+      </div>
+      <div>
+        <label>Driver Advance (₹)</label>
+        <input type="number" step="0.01" id="driver_advance" name="driver_advance" value="0" oninput="autoCalc()" />
+      </div>
+      <div>
+        <label>Diesel / डीज़ल (₹)</label>
+        <input type="number" step="0.01" id="diesel" name="diesel" value="0" oninput="autoCalc()" />
+      </div>
+      <div>
+        <label>Party Advance / Cash (₹)</label>
+        <input type="number" step="0.01" id="party_advance" name="party_advance" value="0" oninput="autoCalc()" />
+      </div>
+      <div>
+        <label>Bilty Charge / बिल्टी शुल्क (₹)</label>
+        <input type="number" step="0.01" id="bilty_charge" name="bilty_charge" value="0" oninput="autoCalc()" />
+      </div>
+      <div>
+        <label>A/c Transfer / खाता ट्रांसफर (₹)</label>
+        <input type="number" step="0.01" id="ac_transfer" name="ac_transfer" value="0" oninput="autoCalc()" />
+      </div>
+      <div>
+        <label>Remarks / टिप्पणी</label>
+        <input type="text" name="remarks" placeholder="Optional note" />
+      </div>
+    </div>
+
+    <div class="auto-summary-bar">
+      <div>Auto Freight (कुल भाड़ा): <strong id="calcFreight">₹56,100.00</strong></div>
+      <div>Auto Deductions (कुल कटौती): <strong id="calcDeduction">₹0.00</strong></div>
+      <div>Auto Net Balance (शेष राशि): <strong id="calcBalance" style="color: var(--crimson);">₹56,100.00</strong></div>
+      <button type="submit" class="btn btn-primary">💾 Save & Create Bill (सेव करें)</button>
+    </div>
+  </form>
+</div>
+
+<!-- SEARCH & RECORDS TABLE -->
+<div class="card">
+  <div class="card-header">
+    <span>📁 डिस्पैच व बिल रिकॉर्ड / Saved Dispatch & Billing Records</span>
+    <form method="GET" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+      <input type="text" name="q" value="{{ q }}" placeholder="Search vehicle, challan, driver, route..." style="width: 220px;" />
+      <input type="date" name="date" value="{{ date_filter }}" style="width: 155px;" />
+      <button type="submit" class="btn btn-navy btn-sm">🔍 Search</button>
+      <a href="{{ url_for('dashboard') }}" class="btn btn-outline btn-sm">Reset</a>
+    </form>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Sr.</th>
+          <th>Date</th>
+          <th>Challan</th>
+          <th>Vehicle No.</th>
+          <th>Driver</th>
+          <th>From → To</th>
+          <th>Qty × Rate</th>
+          <th>Freight (₹)</th>
+          <th>Deduction (₹)</th>
+          <th>Balance (₹)</th>
+          <th>Print / Edit</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in entries %}
+        <tr>
+          <td><strong>{{ e.sr_no }}</strong></td>
+          <td>{{ e.dispatch_date }}</td>
+          <td>{{ e.challan_no }}</td>
+          <td><strong>{{ e.vehicle_no }}</strong></td>
+          <td>{{ e.driver_name }}<br><small>{{ e.driver_mobile }}</small></td>
+          <td>{{ e.from_location }} → {{ e.to_location }}</td>
+          <td>{{ e.qty }} × ₹{{ e.rate }}</td>
+          <td><strong>₹{{ "{:,.2f}".format(e.freight_amount) }}</strong></td>
+          <td>₹{{ "{:,.2f}".format(e.total_deduction) }}</td>
+          <td><strong style="color: var(--crimson);">₹{{ "{:,.2f}".format(e.balance) }}</strong></td>
+          <td style="white-space: nowrap;">
+            <a href="{{ url_for('print_challan', entry_id=e.id) }}" target="_blank" class="btn btn-success btn-sm">🧾 Challan</a>
+            <a href="{{ url_for('edit_dispatch', entry_id=e.id) }}" class="btn btn-outline btn-sm">✏️ Edit</a>
+            <form method="POST" action="{{ url_for('toggle_archive_dispatch', entry_id=e.id) }}" style="display:inline;">
+              <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Archive this record? Data remains safely stored.');">📦</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="11" style="text-align:center; padding: 18px; color: var(--muted);">
+            अभी कोई रिकॉर्ड नहीं है। ऊपर दिए गए फॉर्म से पहला चालान जोड़ें / No records yet. Add your first challan above!
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- CUSTOM REGISTER (DYNAMIC ADD / DELETE COLUMNS) -->
+<div class="card" id="custom-register">
+  <div class="card-header">
+    <span>🗂️ कस्टम रजिस्टर (कॉलम जोड़ें या हटाएं) / Custom Register Builder</span>
+    <span style="font-size: 0.8rem; color: var(--muted);">Add or delete your own register columns anytime</span>
+  </div>
+
+  <!-- Add Column Form -->
+  <form method="POST" action="{{ url_for('add_custom_column') }}" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; align-items: end;">
+    <div style="flex: 1; min-width: 180px;">
+      <label>New Column Name (English)</label>
+      <input type="text" name="name_en" placeholder="e.g. Toll Tax / Party Name" required />
+    </div>
+    <div style="flex: 1; min-width: 180px;">
+      <label>कॉलम का नाम (हिंदी - Optional)</label>
+      <input type="text" name="name_hi" placeholder="उदा. टोल टैक्स / पार्टी नाम" />
+    </div>
+    <div style="width: 140px;">
+      <label>Field Type</label>
+      <select name="col_type">
+        <option value="text">Text</option>
+        <option value="number">Number / ₹</option>
+        <option value="date">Date</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-navy">+ Add Column</button>
+  </form>
+
+  <!-- Active Columns Pills with Delete Option -->
+  <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;">
+    {% for col in custom_cols %}
+      <div style="background: #f8fafc; border: 1px solid #94a3b8; border-radius: 999px; padding: 4px 12px; display: flex; align-items: center; gap: 8px; font-size: 0.82rem;">
+        <span><strong>{{ col.name_en }}</strong> {% if col.name_hi %}({{ col.name_hi }}){% endif %}</span>
+        <form method="POST" action="{{ url_for('delete_custom_column', col_id=col.id) }}" style="display:inline;">
+          <button type="submit" style="background:none; border:none; color:var(--crimson); font-weight:900; cursor:pointer;" title="Delete Column" onclick="return confirm('Delete column {{ col.name_en }}?');">✕</button>
+        </form>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Add Custom Row Form -->
+  {% if custom_cols %}
+  <form method="POST" action="{{ url_for('add_custom_row') }}" style="margin-bottom: 14px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1;">
+    <div class="form-grid">
+      <div>
+        <label>Date / दिनांक</label>
+        <input type="date" name="row_date" value="{{ today_str }}" required />
+      </div>
+      {% for col in custom_cols %}
+      <div>
+        <label>{{ col.name_en }} {% if col.name_hi %}/ {{ col.name_hi }}{% endif %}</label>
+        <input type="{{ col.col_type }}" step="any" name="col_{{ col.id }}" />
+      </div>
+      {% endfor %}
+    </div>
+    <div style="margin-top: 10px;">
+      <button type="submit" class="btn btn-success btn-sm">+ Save Custom Row (एंट्री जोड़ें)</button>
+    </div>
+  </form>
+  {% endif %}
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          {% for col in custom_cols %}
+            <th>{{ col.name_en }}{% if col.name_hi %}<br><small>{{ col.name_hi }}</small>{% endif %}</th>
+          {% endfor %}
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in custom_rows %}
+        <tr>
+          <td>{{ r.row_date }}</td>
+          {% for col in custom_cols %}
+            <td>{{ r.data.get(col.id|string, '-') }}</td>
+          {% endfor %}
+          <td>
+            <form method="POST" action="{{ url_for('delete_custom_row', row_id=r.id) }}" style="display:inline;">
+              <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Delete this row?');">Del</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="{{ custom_cols|length + 2 }}" style="text-align:center; color:var(--muted);">No custom register rows yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PASSWORD SET / CHANGE SECTION -->
+<div class="card" id="password-settings">
+  <div class="card-header">🔑 पासवर्ड बदलें / Set or Change Account Password</div>
+  <form method="POST" action="{{ url_for('change_password') }}" class="form-grid" style="align-items: end;">
+    <div>
+      <label>Current Password / पुराना पासवर्ड</label>
+      <input type="password" name="current_password" required />
+    </div>
+    <div>
+      <label>New Password / नया पासवर्ड</label>
+      <input type="password" name="new_password" minlength="6" required />
+    </div>
+    <div>
+      <label>Confirm New Password / पुष्टि करें</label>
+      <input type="password" name="confirm_password" minlength="6" required />
+    </div>
+    <div>
+      <button type="submit" class="btn btn-navy" style="width: 100%;">Update Password</button>
+    </div>
+  </form>
+</div>
+
+<script>
+  function autoCalc() {
+    const qty = parseFloat(document.getElementById("qty").value) || 0;
+    const rate = parseFloat(document.getElementById("rate").value) || 0;
+    const dAdv = parseFloat(document.getElementById("driver_advance").value) || 0;
+    const diesel = parseFloat(document.getElementById("diesel").value) || 0;
+    const pAdv = parseFloat(document.getElementById("party_advance").value) || 0;
+    const bilty = parseFloat(document.getElementById("bilty_charge").value) || 0;
+    const ac = parseFloat(document.getElementById("ac_transfer").value) || 0;
+
+    const freight = qty * rate;
+    const deduction = dAdv + diesel + pAdv + bilty + ac;
+    const balance = freight - deduction;
+
+    document.getElementById("calcFreight").textContent = "₹" + freight.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById("calcDeduction").textContent = "₹" + deduction.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById("calcBalance").textContent = "₹" + balance.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  autoCalc();
+</script>
+{% endblock %}

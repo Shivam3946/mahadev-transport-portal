@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Login — MAHADEV TRANSPORT{% endblock %}
+{% block content %}
+<div style="max-width: 440px; margin: 28px auto;">
+  <div class="card">
+    <div class="card-header">🔐 सुरक्षित लॉगिन / Secure Portal Login</div>
+    <form method="POST">
+      <div style="margin-bottom: 12px;">
+        <label>Username / यूज़रनेम</label>
+        <input type="text" name="username" value="prakash" required />
+      </div>
+      <div style="margin-bottom: 14px;">
+        <label>Password / पासवर्ड</label>
+        <input type="password" name="password" placeholder="Enter password" required />
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%; padding: 10px;">
+        लॉगिन करें / Login to Dashboard
+      </button>
+    </form>
+    <div style="margin-top: 14px; text-align: center; font-size: 0.86rem;">
+      <a href="{{ url_for('reset_password') }}" style="color: var(--navy); font-weight: 700;">
+        पासवर्ड भूल गए? रीसेट करें / Forgot or Reset Password
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

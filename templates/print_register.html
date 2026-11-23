@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Daily Dispatch Register — MAHADEV TRANSPORT</title>
+  <style>
+    body { font-family: "Segoe UI", "Noto Sans Devanagari", Arial, sans-serif; margin: 14px; color: #0f172a; }
+    .no-print { margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .btn { background: #0f294a; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; text-decoration: none; }
+    .sheet { position: relative; border: 3px solid #0f294a; border-radius: 10px; padding: 16px; overflow: hidden; }
+    .watermark {
+      position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%) rotate(-24deg);
+      font-size: 3.4rem; font-weight: 900; color: rgba(15, 41, 74, 0.08);
+      letter-spacing: 6px; pointer-events: none; white-space: nowrap; z-index: 0;
+    }
+    .content { position: relative; z-index: 1; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #b91c1c; padding-bottom: 10px; margin-bottom: 10px; }
+    .brand { font-size: 1.8rem; font-weight: 900; color: #b91c1c; }
+    .tagline { background: #fef3c7; border: 1px solid #f59e0b; color: #78350f; padding: 4px 12px; border-radius: 999px; font-size: 0.82rem; font-weight: 700; display: inline-block; margin-top: 4px; }
+    .banner { background: #0f294a; color: #fff; text-align: center; padding: 7px; font-weight: 800; border-radius: 6px; margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+    th { background: #0f294a; color: #fff; border: 1px solid #1e293b; padding: 5px 3px; text-align: center; }
+    td { border: 1px solid #64748b; padding: 5px 4px; text-align: center; }
+    .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 12px; background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; font-size: 0.88rem; }
+    @media print { .no-print { display: none; } body { margin: 0; } }
+  </style>
+</head>
+<body>
+  <div class="no-print">
+    <a href="{{ url_for('dashboard') }}" class="btn">← Back to Dashboard</a>
+    <button onclick="window.print()" class="btn" style="background:#15803d;">🖨️ Print / Save PDF</button>
+  </div>
+
+  <div class="sheet">
+    <div class="watermark">MAHADEV TRANSPORT</div>
+    <div class="content">
+      <div class="header">
+        <div>
+          <div class="brand">महादेव TRANSPORT • MAHADEV TRANSPORT</div>
+          <div class="tagline">★ भरोसेमंद माल ढुलाई, समय पर डिलीवरी — Trusted Goods Transport & Logistics ★</div>
+        </div>
+        <div style="text-align: right; font-size: 0.88rem;">
+          <div><strong>Director / संचालक:</strong> Prakash Rai (प्रकाश राय)</div>
+          <div><strong>Date / दिनांक:</strong> {{ register_date }}</div>
+        </div>
+      </div>
+
+      <div class="banner">DAILY DISPATCH REGISTER / दैनिक डिस्पैच रजिस्टर</div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>1. S.No</th>
+            <th>2. Challan</th>
+            <th>3. Date</th>
+            <th>4. Vehicle No.</th>
+            <th>5. Driver Name</th>
+            <th>6. Mobile</th>
+            <th>7. Route (From-To)</th>
+            <th>8. Material</th>
+            <th>9. Qty</th>
+            <th>10. Rate</th>
+            <th>11. Freight</th>
+            <th>12. Driver Adv.</th>
+            <th>13. Diesel</th>
+            <th>14. Party Adv.</th>
+            <th>15. Bilty+A/c</th>
+            <th>16. Balance</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in entries %}
+          <tr>
+            <td>{{ e.sr_no }}</td>
+            <td>{{ e.challan_no }}</td>
+            <td>{{ e.dispatch_date }}</td>
+            <td><strong>{{ e.vehicle_no }}</strong></td>
+            <td>{{ e.driver_name }}</td>
+            <td>{{ e.driver_mobile }}</td>
+            <td>{{ e.from_location }} - {{ e.to_location }}</td>
+            <td>{{ e.material }}</td>
+            <td>{{ e.qty }}</td>
+            <td>{{ e.rate }}</td>
+            <td><strong>{{ "{:,.0f}".format(e.freight_amount) }}</strong></td>
+            <td>{{ "{:,.0f}".format(e.driver_advance) }}</td>
+            <td>{{ "{:,.0f}".format(e.diesel) }}</td>
+            <td>{{ "{:,.0f}".format(e.party_advance) }}</td>
+            <td>{{ "{:,.0f}".format(e.bilty_charge + e.ac_transfer) }}</td>
+            <td><strong>{{ "{:,.0f}".format(e.balance) }}</strong></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="summary">
+        <div><strong>Total Freight:</strong> ₹{{ "{:,.2f}".format(summary.freight) }}</div>
+        <div><strong>Total Advance:</strong> ₹{{ "{:,.2f}".format(summary.advance) }}</div>
+        <div><strong>Diesel + Bilty + A/c:</strong> ₹{{ "{:,.2f}".format(summary.expense) }}</div>
+        <div><strong>Net Balance:</strong> <span style="color:#b91c1c; font-weight:800;">₹{{ "{:,.2f}".format(summary.balance) }}</span></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
