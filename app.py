@@ -33,10 +33,12 @@ load_dotenv()
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "mahadev-transport-secure-key-2026")
 
-# Normalize PostgreSQL URL so SQLAlchemy never fails on postgres://
+# Normalize PostgreSQL URL so SQLAlchemy uses psycopg2-binary cleanly
 raw_db_url = os.environ.get("DATABASE_URL", "").strip()
 if raw_db_url.startswith("postgres://"):
-    raw_db_url = raw_db_url.replace("postgres://", "postgresql://", 1)
+    raw_db_url = raw_db_url.replace("postgres://", "postgresql+psycopg2://", 1)
+elif raw_db_url.startswith("postgresql://") and not raw_db_url.startswith("postgresql+psycopg2://"):
+    raw_db_url = raw_db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
 
 if not raw_db_url:
     os.makedirs(app.instance_path, exist_ok=True)
