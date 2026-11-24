@@ -35,6 +35,20 @@
       gap: 12px;
       box-shadow: 0 4px 14px rgba(15, 41, 74, 0.25);
     }
+    .brand-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-logo {
+      width: 54px;
+      height: 54px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 2px solid #fbbf24;
+      background: #fff;
+      flex-shrink: 0;
+    }
     .brand-title { font-size: 1.5rem; font-weight: 900; letter-spacing: 0.5px; }
     .tagline { font-size: 0.88rem; color: #fde68a; font-weight: 600; margin-top: 2px; }
     .director-box {
@@ -54,6 +68,7 @@
     }
     .flash.success { background: #dcfce7; color: #14532d; border: 1px solid #86efac; }
     .flash.danger { background: #fee2e2; color: #7f1d1d; border: 1px solid #fca5a5; }
+    .flash.warning { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
     .flash.info { background: #dbeafe; color: #1e3a8a; border: 1px solid #93c5fd; }
     .card {
       background: var(--card);
@@ -109,9 +124,17 @@
 </head>
 <body>
   <header class="topbar">
-    <div>
-      <div class="brand-title">महादेव TRANSPORT • MAHADEV TRANSPORT</div>
-      <div class="tagline">भरोसेमंद माल ढुलाई, समय पर डिलीवरी — Reliable Freight & Seamless Logistics Partner</div>
+    <div class="brand-box">
+      <img
+        src="{{ url_for('static', filename='img/mahadev-logo.png') }}"
+        alt="Mahadev Transport Logo"
+        class="brand-logo"
+        onerror="this.style.display='none';"
+      />
+      <div>
+        <div class="brand-title">महादेव TRANSPORT • MAHADEV TRANSPORT</div>
+        <div class="tagline">भरोसेमंद माल ढुलाई, समय पर डिलीवरी — Reliable Freight & Seamless Logistics Partner</div>
+      </div>
     </div>
     <div class="director-box">
       <div><strong>Director / संचालक:</strong> Prakash Rai (प्रकाश राय)</div>
