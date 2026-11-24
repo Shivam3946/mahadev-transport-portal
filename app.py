@@ -25,7 +25,7 @@ from flask_login import (
     logout_user,
 )
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import func
+from sqlalchemy import func, inspect, text
 from werkzeug.security import check_password_hash, generate_password_hash
 
 load_dotenv()
@@ -80,15 +80,16 @@ class DispatchEntry(db.Model):
     __tablename__ = "dispatch_entries"
     id = db.Column(db.Integer, primary_key=True)
     sr_no = db.Column(db.Integer, nullable=False, index=True)
-    challan_no = db.Column(db.String(60), nullable=False, index=True)
-    dispatch_date = db.Column(db.String(20), nullable=False, index=True)
-    vehicle_no = db.Column(db.String(60), nullable=False, index=True)
-    driver_name = db.Column(db.String(120), nullable=False)
+    challan_no = db.Column(db.String(60), default="", index=True)
+    dispatch_date = db.Column(db.String(20), default="", index=True)
+    vehicle_no = db.Column(db.String(60), default="", index=True)
+    driver_name = db.Column(db.String(120), default="")
     driver_mobile = db.Column(db.String(40), default="")
     owner_mobile = db.Column(db.String(40), default="")
-    from_location = db.Column(db.String(160), nullable=False)
-    to_location = db.Column(db.String(160), nullable=False)
-    material = db.Column(db.String(160), default="Goods / माल")
+    party_name = db.Column(db.String(160), default="")
+    from_location = db.Column(db.String(160), default="")
+    to_location = db.Column(db.String(160), default="")
+    material = db.Column(db.String(160), default="")
     qty = db.Column(db.Float, default=0.0)
     receive_weight = db.Column(db.String(60), default="")
     rate = db.Column(db.Float, default=0.0)
@@ -100,6 +101,8 @@ class DispatchEntry(db.Model):
     ac_transfer = db.Column(db.Float, default=0.0)
     total_deduction = db.Column(db.Float, default=0.0)
     balance = db.Column(db.Float, default=0.0)
+    received_amount = db.Column(db.Float, default=0.0)
+    payment_status = db.Column(db.String(30), default="Pending")  # Pending | Partial | Settled
     remarks = db.Column(db.String(255), default="")
     is_archived = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -113,6 +116,7 @@ class DispatchEntry(db.Model):
         self.party_advance = float(self.party_advance or 0.0)
         self.bilty_charge = float(self.bilty_charge or 0.0)
         self.ac_transfer = float(self.ac_transfer or 0.0)
+        self.received_amount = float(self.received_amount or 0.0)
 
         self.freight_amount = round(self.qty * self.rate, 2)
         self.total_deduction = round(
@@ -125,6 +129,16 @@ class DispatchEntry(db.Model):
         )
         self.balance = round(self.freight_amount - self.total_deduction, 2)
 
+        if self.payment_status not in {"Pending", "Partial", "Settled"}:
+            if self.received_amount <= 0:
+                self.payment_status = "Pending"
+            elif self.balance > 0 and self.received_amount < self.balance:
+                self.payment_status = "Partial"
+            elif self.balance > 0 and self.received_amount >= self.balance:
+                self.payment_status = "Settled"
+            else:
+                self.payment_status = "Pending"
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -135,6 +149,7 @@ class DispatchEntry(db.Model):
             "driver_name": self.driver_name,
             "driver_mobile": self.driver_mobile,
             "owner_mobile": self.owner_mobile,
+            "party_name": self.party_name,
             "from_location": self.from_location,
             "to_location": self.to_location,
             "material": self.material,
@@ -149,6 +164,8 @@ class DispatchEntry(db.Model):
             "ac_transfer": self.ac_transfer,
             "total_deduction": self.total_deduction,
             "balance": self.balance,
+            "received_amount": self.received_amount,
+            "payment_status": self.payment_status,
             "remarks": self.remarks,
         }
 
@@ -181,9 +198,32 @@ def load_user(user_id):
     return db.session.get(User, int(user_id))
 
 
+def sync_dispatch_columns():
+    """Safely add new optional columns to dispatch_entries without dropping data."""
+    inspector = inspect(db.engine)
+    if not inspector.has_table("dispatch_entries"):
+        return
+
+    existing_cols = {col["name"] for col in inspector.get_columns("dispatch_entries")}
+    alter_statements = []
+
+    if "party_name" not in existing_cols:
+        alter_statements.append("ALTER TABLE dispatch_entries ADD COLUMN party_name VARCHAR(160) DEFAULT ''")
+    if "received_amount" not in existing_cols:
+        alter_statements.append("ALTER TABLE dispatch_entries ADD COLUMN received_amount FLOAT DEFAULT 0.0")
+    if "payment_status" not in existing_cols:
+        alter_statements.append("ALTER TABLE dispatch_entries ADD COLUMN payment_status VARCHAR(30) DEFAULT 'Pending'")
+
+    for stmt in alter_statements:
+        db.session.execute(text(stmt))
+    if alter_statements:
+        db.session.commit()
+
+
 def bootstrap_database():
-    """Safely initialize tables without ever dropping existing production data."""
+    """Safely initialize tables and columns without ever dropping existing production data."""
     db.create_all()
+    sync_dispatch_columns()
 
     if User.query.count() == 0:
         default_admin = User(
@@ -227,7 +267,7 @@ def next_serial_number() -> int:
 
 def next_challan_number() -> str:
     last_entry = DispatchEntry.query.order_by(DispatchEntry.id.desc()).first()
-    if last_entry and last_entry.challan_no.isdigit():
+    if last_entry and last_entry.challan_no and last_entry.challan_no.isdigit():
         return str(int(last_entry.challan_no) + 1)
     return "1209"
 
@@ -316,12 +356,16 @@ def logout():
 def dashboard():
     q = request.args.get("q", "").strip()
     date_filter = request.args.get("date", "").strip()
+    status_filter = request.args.get("status", "").strip()
     show_archived = request.args.get("archived", "0") == "1"
 
     query = DispatchEntry.query.filter_by(is_archived=show_archived)
 
     if date_filter:
         query = query.filter(DispatchEntry.dispatch_date == date_filter)
+
+    if status_filter in {"Pending", "Partial", "Settled"}:
+        query = query.filter(DispatchEntry.payment_status == status_filter)
 
     if q:
         like_pat = f"%{q}%"
@@ -330,6 +374,7 @@ def dashboard():
                 DispatchEntry.challan_no.ilike(like_pat),
                 DispatchEntry.vehicle_no.ilike(like_pat),
                 DispatchEntry.driver_name.ilike(like_pat),
+                DispatchEntry.party_name.ilike(like_pat),
                 DispatchEntry.from_location.ilike(like_pat),
                 DispatchEntry.to_location.ilike(like_pat),
                 DispatchEntry.material.ilike(like_pat),
@@ -338,20 +383,34 @@ def dashboard():
 
     entries = query.order_by(DispatchEntry.sr_no.desc()).all()
 
+    total_received = round(sum(to_float(e.received_amount) for e in entries), 2)
+    total_balance = round(sum(to_float(e.balance) for e in entries), 2)
+    pending_party_amount = round(
+        sum(max(to_float(e.balance) - to_float(e.received_amount), 0.0) for e in entries), 2
+    )
+
     totals = {
         "count": len(entries),
-        "freight": round(sum(e.freight_amount for e in entries), 2),
-        "advance_diesel": round(sum(e.driver_advance + e.diesel + e.party_advance for e in entries), 2),
-        "bilty_ac": round(sum(e.bilty_charge + e.ac_transfer for e in entries), 2),
-        "deduction": round(sum(e.total_deduction for e in entries), 2),
-        "balance": round(sum(e.balance for e in entries), 2),
+        "freight": round(sum(to_float(e.freight_amount) for e in entries), 2),
+        "advance_diesel": round(
+            sum(to_float(e.driver_advance) + to_float(e.diesel) + to_float(e.party_advance) for e in entries), 2
+        ),
+        "bilty_ac": round(sum(to_float(e.bilty_charge) + to_float(e.ac_transfer) for e in entries), 2),
+        "deduction": round(sum(to_float(e.total_deduction) for e in entries), 2),
+        "balance": total_balance,
+        "received": total_received,
+        "pending_party": pending_party_amount,
     }
 
     custom_cols = CustomColumn.query.order_by(CustomColumn.sort_order.asc(), CustomColumn.id.asc()).all()
     custom_rows_raw = CustomRow.query.order_by(CustomRow.id.desc()).all()
     custom_rows = [{"id": r.id, "row_date": r.row_date, "data": r.get_data()} for r in custom_rows_raw]
 
-    db_mode = "PostgreSQL Cloud (100% Persistent)" if "postgresql" in app.config["SQLALCHEMY_DATABASE_URI"] else "Local SQLite (Set DATABASE_URL on Render)"
+    db_mode = (
+        "PostgreSQL Cloud (100% Persistent)"
+        if "postgresql" in app.config["SQLALCHEMY_DATABASE_URI"]
+        else "Local SQLite (Set DATABASE_URL on Render)"
+    )
 
     return render_template(
         "dashboard.html",
@@ -362,6 +421,7 @@ def dashboard():
         today_str=date.today().isoformat(),
         q=q,
         date_filter=date_filter,
+        status_filter=status_filter,
         show_archived=show_archived,
         custom_cols=custom_cols,
         custom_rows=custom_rows,
@@ -373,18 +433,24 @@ def dashboard():
 @login_required
 def add_dispatch():
     try:
-        sr_val = int(request.form.get("sr_no") or next_serial_number())
+        raw_sr = (request.form.get("sr_no") or "").strip()
+        sr_val = int(float(raw_sr)) if raw_sr else next_serial_number()
+        status_val = request.form.get("payment_status", "Pending").strip()
+        if status_val not in {"Pending", "Partial", "Settled"}:
+            status_val = "Pending"
+
         entry = DispatchEntry(
-            sr_no=sr_val,
-            challan_no=request.form.get("challan_no", "").strip() or next_challan_number(),
-            dispatch_date=request.form.get("dispatch_date", "").strip() or date.today().isoformat(),
+            sr_no=sr_val if sr_val > 0 else next_serial_number(),
+            challan_no=request.form.get("challan_no", "").strip(),
+            dispatch_date=request.form.get("dispatch_date", "").strip(),
             vehicle_no=request.form.get("vehicle_no", "").strip().upper(),
             driver_name=request.form.get("driver_name", "").strip(),
             driver_mobile=request.form.get("driver_mobile", "").strip(),
             owner_mobile=request.form.get("owner_mobile", "").strip(),
+            party_name=request.form.get("party_name", "").strip(),
             from_location=request.form.get("from_location", "").strip(),
             to_location=request.form.get("to_location", "").strip(),
-            material=request.form.get("material", "").strip() or "Goods / माल",
+            material=request.form.get("material", "").strip(),
             qty=to_float(request.form.get("qty")),
             receive_weight=request.form.get("receive_weight", "").strip(),
             rate=to_float(request.form.get("rate")),
@@ -393,12 +459,15 @@ def add_dispatch():
             party_advance=to_float(request.form.get("party_advance")),
             bilty_charge=to_float(request.form.get("bilty_charge")),
             ac_transfer=to_float(request.form.get("ac_transfer")),
+            received_amount=to_float(request.form.get("received_amount")),
+            payment_status=status_val,
             remarks=request.form.get("remarks", "").strip(),
         )
         entry.recalculate()
         db.session.add(entry)
         db.session.commit()
-        flash(f"चालान #{entry.challan_no} (Sr. {entry.sr_no}) सफलतापूर्वक सेव हो गया / Saved successfully!", "success")
+        label = f"चालान #{entry.challan_no}" if entry.challan_no else f"Sr. {entry.sr_no}"
+        flash(f"{label} सफलतापूर्वक सेव हो गया / Saved successfully!", "success")
     except Exception as exc:
         db.session.rollback()
         flash(f"त्रुटि / Error saving entry: {exc}", "danger")
@@ -412,12 +481,17 @@ def edit_dispatch(entry_id):
     entry = db.get_or_404(DispatchEntry, entry_id)
     if request.method == "POST":
         try:
+            status_val = request.form.get("payment_status", entry.payment_status or "Pending").strip()
+            if status_val not in {"Pending", "Partial", "Settled"}:
+                status_val = "Pending"
+
             entry.challan_no = request.form.get("challan_no", "").strip()
             entry.dispatch_date = request.form.get("dispatch_date", "").strip()
             entry.vehicle_no = request.form.get("vehicle_no", "").strip().upper()
             entry.driver_name = request.form.get("driver_name", "").strip()
             entry.driver_mobile = request.form.get("driver_mobile", "").strip()
             entry.owner_mobile = request.form.get("owner_mobile", "").strip()
+            entry.party_name = request.form.get("party_name", "").strip()
             entry.from_location = request.form.get("from_location", "").strip()
             entry.to_location = request.form.get("to_location", "").strip()
             entry.material = request.form.get("material", "").strip()
@@ -429,6 +503,8 @@ def edit_dispatch(entry_id):
             entry.party_advance = to_float(request.form.get("party_advance"))
             entry.bilty_charge = to_float(request.form.get("bilty_charge"))
             entry.ac_transfer = to_float(request.form.get("ac_transfer"))
+            entry.received_amount = to_float(request.form.get("received_amount"))
+            entry.payment_status = status_val
             entry.remarks = request.form.get("remarks", "").strip()
             entry.recalculate()
             db.session.commit()
@@ -441,14 +517,60 @@ def edit_dispatch(entry_id):
     return render_template("edit_dispatch.html", entry=entry)
 
 
+@app.route("/dispatch/<int:entry_id>/payment", methods=["POST"])
+@login_required
+def update_dispatch_payment(entry_id):
+    entry = db.get_or_404(DispatchEntry, entry_id)
+    try:
+        entry.received_amount = to_float(request.form.get("received_amount"))
+        status_val = request.form.get("payment_status", "").strip()
+        if status_val in {"Pending", "Partial", "Settled"}:
+            entry.payment_status = status_val
+        else:
+            if entry.received_amount <= 0:
+                entry.payment_status = "Pending"
+            elif entry.balance > 0 and entry.received_amount < entry.balance:
+                entry.payment_status = "Partial"
+            elif entry.balance > 0 and entry.received_amount >= entry.balance:
+                entry.payment_status = "Settled"
+            else:
+                entry.payment_status = "Pending"
+        db.session.commit()
+        label = f"चालान #{entry.challan_no}" if entry.challan_no else f"Sr. {entry.sr_no}"
+        flash(f"भुगतान स्थिति ({entry.payment_status}) अपडेट हो गई — {label}!", "success")
+    except Exception as exc:
+        db.session.rollback()
+        flash(f"Payment update error: {exc}", "danger")
+    return redirect(url_for("dashboard"))
+
+
 @app.route("/dispatch/<int:entry_id>/toggle-archive", methods=["POST"])
 @login_required
 def toggle_archive_dispatch(entry_id):
     entry = db.get_or_404(DispatchEntry, entry_id)
     entry.is_archived = not entry.is_archived
     db.session.commit()
-    msg = "रिकॉर्ड आर्काइव में भेजा गया / Moved to archive." if entry.is_archived else "रिकॉर्ड वापस सक्रिय किया गया / Restored to active records."
+    msg = (
+        "रिकॉर्ड आर्काइव में भेजा गया / Moved to archive."
+        if entry.is_archived
+        else "रिकॉर्ड वापस सक्रिय किया गया / Restored to active records."
+    )
     flash(msg, "info")
+    return redirect(url_for("dashboard"))
+
+
+@app.route("/dispatch/<int:entry_id>/delete", methods=["POST"])
+@login_required
+def delete_dispatch(entry_id):
+    entry = db.get_or_404(DispatchEntry, entry_id)
+    label = f"चालान #{entry.challan_no}" if entry.challan_no else f"Sr. {entry.sr_no}"
+    try:
+        db.session.delete(entry)
+        db.session.commit()
+        flash(f"रिकॉर्ड ({label}) स्थायी रूप से डिलीट हो गया / Permanently deleted.", "warning")
+    except Exception as exc:
+        db.session.rollback()
+        flash(f"डिलीट करने में त्रुटि / Delete error: {exc}", "danger")
     return redirect(url_for("dashboard"))
 
 
@@ -464,10 +586,11 @@ def print_register():
     entries = query.order_by(DispatchEntry.sr_no.asc()).all()
 
     summary = {
-        "freight": round(sum(e.freight_amount for e in entries), 2),
-        "advance": round(sum(e.driver_advance + e.party_advance for e in entries), 2),
-        "expense": round(sum(e.diesel + e.bilty_charge + e.ac_transfer for e in entries), 2),
-        "balance": round(sum(e.balance for e in entries), 2),
+        "freight": round(sum(to_float(e.freight_amount) for e in entries), 2),
+        "advance": round(sum(to_float(e.driver_advance) + to_float(e.party_advance) for e in entries), 2),
+        "expense": round(sum(to_float(e.diesel) + to_float(e.bilty_charge) + to_float(e.ac_transfer) for e in entries), 2),
+        "balance": round(sum(to_float(e.balance) for e in entries), 2),
+        "received": round(sum(to_float(e.received_amount) for e in entries), 2),
     }
     return render_template(
         "print_register.html",
@@ -546,16 +669,16 @@ def export_csv():
     writer = csv.writer(output)
     writer.writerow([
         "Sr No", "Challan No", "Date", "Vehicle No", "Driver Name", "Driver Mobile",
-        "From", "To", "Material", "Qty", "Rate", "Freight (INR)",
+        "Party Name", "From", "To", "Material", "Qty", "Rate", "Freight (INR)",
         "Driver Advance", "Diesel", "Party Advance", "Bilty Charge", "A/c Transfer",
-        "Total Deduction", "Balance (INR)", "Remarks"
+        "Total Deduction", "Balance (INR)", "Received Amount (INR)", "Payment Status", "Remarks"
     ])
     for e in entries:
         writer.writerow([
             e.sr_no, e.challan_no, e.dispatch_date, e.vehicle_no, e.driver_name, e.driver_mobile,
-            e.from_location, e.to_location, e.material, e.qty, e.rate, e.freight_amount,
+            e.party_name, e.from_location, e.to_location, e.material, e.qty, e.rate, e.freight_amount,
             e.driver_advance, e.diesel, e.party_advance, e.bilty_charge, e.ac_transfer,
-            e.total_deduction, e.balance, e.remarks
+            e.total_deduction, e.balance, e.received_amount, e.payment_status, e.remarks
         ])
 
     return Response(
