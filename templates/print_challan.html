@@ -2,7 +2,7 @@
 <html lang="hi">
 <head>
   <meta charset="UTF-8" />
-  <title>Challan #{{ entry.challan_no }} — MAHADEV TRANSPORT</title>
+  <title>Challan #{{ entry.challan_no or entry.sr_no }} — MAHADEV TRANSPORT</title>
   <style>
     body { font-family: "Segoe UI", "Noto Sans Devanagari", Arial, sans-serif; margin: 18px; color: #0f172a; }
     .no-print { max-width: 860px; margin: 0 auto 12px; display: flex; justify-content: space-between; }
@@ -17,9 +17,11 @@
       letter-spacing: 6px; pointer-events: none; white-space: nowrap; z-index: 0;
     }
     .content { position: relative; z-index: 1; }
-    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #b91c1c; padding-bottom: 12px; margin-bottom: 14px; }
-    .brand { font-size: 1.9rem; font-weight: 900; color: #b91c1c; }
-    .tagline { background: #fef3c7; border: 1px solid #f59e0b; color: #78350f; padding: 5px 12px; border-radius: 999px; font-size: 0.84rem; font-weight: 700; display: inline-block; margin-top: 4px; }
+    .header { display: flex; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 3px solid #b91c1c; padding-bottom: 12px; margin-bottom: 14px; }
+    .brand-box { display: flex; align-items: center; gap: 12px; }
+    .brand-logo { width: 58px; height: 58px; object-fit: cover; border-radius: 10px; border: 2px solid #0f294a; background: #fff; flex-shrink: 0; }
+    .brand { font-size: 1.8rem; font-weight: 900; color: #b91c1c; }
+    .tagline { background: #fef3c7; border: 1px solid #f59e0b; color: #78350f; padding: 5px 12px; border-radius: 999px; font-size: 0.82rem; font-weight: 700; display: inline-block; margin-top: 4px; }
     .banner { background: #0f294a; color: #fff; text-align: center; padding: 8px; font-weight: 800; border-radius: 6px; margin-bottom: 14px; letter-spacing: 0.6px; }
     .meta { display: flex; justify-content: space-between; font-weight: 800; margin-bottom: 14px; }
     .pill { border: 2px solid #b91c1c; color: #b91c1c; padding: 2px 12px; border-radius: 999px; }
@@ -41,9 +43,17 @@
     <div class="watermark">MAHADEV TRANSPORT</div>
     <div class="content">
       <div class="header">
-        <div>
-          <div class="brand">महादेव TRANSPORT • MAHADEV TRANSPORT</div>
-          <div class="tagline">★ हर खेप सुरक्षित, हर वादा पक्का — Committed to Safe & Timely Goods Delivery ★</div>
+        <div class="brand-box">
+          <img
+            src="{{ url_for('static', filename='img/mahadev-logo.png') }}"
+            alt="Mahadev Transport Logo"
+            class="brand-logo"
+            onerror="this.style.display='none';"
+          />
+          <div>
+            <div class="brand">महादेव TRANSPORT • MAHADEV TRANSPORT</div>
+            <div class="tagline">★ हर खेप सुरक्षित, हर वादा पक्का — Committed to Safe & Timely Goods Delivery ★</div>
+          </div>
         </div>
         <div style="text-align: right; font-size: 0.9rem;">
           <div><strong>Director / संचालक:</strong> Prakash Rai (प्रकाश राय)</div>
@@ -55,28 +65,31 @@
 
       <div class="meta">
         <div>Sr. No. / क्रम सं.: <span class="pill">{{ entry.sr_no }}</span></div>
-        <div>Bilty / Challan No.: <strong>{{ entry.challan_no }}</strong></div>
-        <div>Date / दिनांक: <span class="pill">{{ entry.dispatch_date }}</span></div>
+        <div>Bilty / Challan No.: <strong>{{ entry.challan_no or '-' }}</strong></div>
+        <div>Date / दिनांक: <span class="pill">{{ entry.dispatch_date or '-' }}</span></div>
       </div>
 
       <div class="grid">
-        <div class="row"><span>Vehicle No. (गाड़ी नं.):</span><strong>{{ entry.vehicle_no }}</strong></div>
-        <div class="row"><span>Driver Name & Mob.:</span><strong>{{ entry.driver_name }} {% if entry.driver_mobile %}({{ entry.driver_mobile }}){% endif %}</strong></div>
-        <div class="row"><span>From (कहाँ से):</span><strong>{{ entry.from_location }}</strong></div>
-        <div class="row"><span>To (कहाँ तक):</span><strong>{{ entry.to_location }}</strong></div>
-        <div class="row"><span>Material / Goods:</span><strong>{{ entry.material }}</strong></div>
-        <div class="row"><span>Weight / Receive Wt.:</span><strong>{{ entry.qty }} MT {% if entry.receive_weight %}/ {{ entry.receive_weight }}{% endif %}</strong></div>
-        <div class="row"><span>Rate (दर):</span><strong>₹{{ "{:,.2f}".format(entry.rate) }}</strong></div>
-        <div class="row"><span>Total Lorry Freight (कुल भाड़ा):</span><strong>₹{{ "{:,.2f}".format(entry.freight_amount) }}</strong></div>
-        <div class="row"><span>Diesel (डीज़ल):</span><strong>₹{{ "{:,.2f}".format(entry.diesel) }}</strong></div>
-        <div class="row"><span>Driver + Party Cash/Adv.:</span><strong>₹{{ "{:,.2f}".format(entry.driver_advance + entry.party_advance) }}</strong></div>
-        <div class="row"><span>Bilty + A/c Transfer:</span><strong>₹{{ "{:,.2f}".format(entry.bilty_charge + entry.ac_transfer) }}</strong></div>
-        <div class="row"><span>Owner Mobile / Remarks:</span><strong>{{ entry.owner_mobile or entry.remarks or "-" }}</strong></div>
+        <div class="row"><span>Vehicle No. (गाड़ी नं.):</span><strong>{{ entry.vehicle_no or '-' }}</strong></div>
+        <div class="row"><span>Party / Firm Name:</span><strong>{{ entry.party_name or '-' }}</strong></div>
+        <div class="row"><span>Driver Name & Mob.:</span><strong>{{ entry.driver_name or '-' }} {% if entry.driver_mobile %}({{ entry.driver_mobile }}){% endif %}</strong></div>
+        <div class="row"><span>Owner Mobile:</span><strong>{{ entry.owner_mobile or '-' }}</strong></div>
+        <div class="row"><span>From (कहाँ से):</span><strong>{{ entry.from_location or '-' }}</strong></div>
+        <div class="row"><span>To (कहाँ तक):</span><strong>{{ entry.to_location or '-' }}</strong></div>
+        <div class="row"><span>Material / Goods:</span><strong>{{ entry.material or '-' }}</strong></div>
+        <div class="row"><span>Weight / Receive Wt.:</span><strong>{{ entry.qty or 0 }} MT {% if entry.receive_weight %}/ {{ entry.receive_weight }}{% endif %}</strong></div>
+        <div class="row"><span>Rate (दर):</span><strong>₹{{ "{:,.2f}".format(entry.rate or 0) }}</strong></div>
+        <div class="row"><span>Total Lorry Freight (कुल भाड़ा):</span><strong>₹{{ "{:,.2f}".format(entry.freight_amount or 0) }}</strong></div>
+        <div class="row"><span>Diesel (डीज़ल):</span><strong>₹{{ "{:,.2f}".format(entry.diesel or 0) }}</strong></div>
+        <div class="row"><span>Driver + Party Cash/Adv.:</span><strong>₹{{ "{:,.2f}".format((entry.driver_advance or 0) + (entry.party_advance or 0)) }}</strong></div>
+        <div class="row"><span>Bilty + A/c Transfer:</span><strong>₹{{ "{:,.2f}".format((entry.bilty_charge or 0) + (entry.ac_transfer or 0)) }}</strong></div>
+        <div class="row"><span>Party Received / Status:</span><strong>₹{{ "{:,.2f}".format(entry.received_amount or 0) }} ({{ entry.payment_status or 'Pending' }})</strong></div>
+        <div class="row" style="grid-column: span 2;"><span>Remarks / टिप्पणी:</span><strong>{{ entry.remarks or "-" }}</strong></div>
       </div>
 
       <div class="balance-box">
         <span>NET BALANCE / कुल शेष राशि:</span>
-        <span>₹{{ "{:,.2f}".format(entry.balance) }}</span>
+        <span>₹{{ "{:,.2f}".format(entry.balance or 0) }}</span>
       </div>
 
       <div class="sigs">
