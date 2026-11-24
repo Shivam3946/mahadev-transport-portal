@@ -50,6 +50,50 @@
     font-size: 0.78rem;
     font-weight: 700;
   }
+  .status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+  .status-pending {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+  }
+  .status-partial {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+  }
+  .status-settled {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #86efac;
+  }
+  .pay-inline-form {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 4px;
+    align-items: center;
+    margin-top: 4px;
+  }
+  .pay-inline-form input,
+  .pay-inline-form select {
+    width: auto;
+    padding: 3px 6px;
+    font-size: 0.75rem;
+  }
+  .btn-danger-perm {
+    background: #991b1b;
+    color: #fff;
+    border: none;
+  }
+  .btn-danger-perm:hover {
+    background: #7f1d1d;
+  }
 </style>
 {% endblock %}
 
@@ -88,98 +132,122 @@
     <div class="lbl">Net Payable Balance / कुल शेष राशि</div>
     <div class="val">₹{{ "{:,.2f}".format(totals.balance) }}</div>
   </div>
+  <div class="kpi">
+    <div class="lbl">Party Received / प्राप्त भुगतान</div>
+    <div class="val" style="color: var(--success);">₹{{ "{:,.2f}".format(totals.received or 0) }}</div>
+  </div>
+  <div class="kpi">
+    <div class="lbl">Party Pending / बकाया भुगतान</div>
+    <div class="val" style="color: var(--crimson);">₹{{ "{:,.2f}".format(totals.pending_party or 0) }}</div>
+  </div>
 </div>
 
-<!-- AUTOMATED CHALLAN / DISPATCH ENTRY FORM -->
+<!-- AUTOMATED CHALLAN / DISPATCH ENTRY FORM (ALL FIELDS OPTIONAL) -->
 <div class="card">
   <div class="card-header">
     <span>➕ नया चालान व डिस्पैच जोड़ें / Add Automated Challan & Dispatch</span>
-    <span style="font-size: 0.8rem; color: var(--success);">✓ Auto Sr. No., Auto Date & Auto Calculation</span>
+    <span style="font-size: 0.8rem; color: var(--success);">✓ All Fields Optional · Auto Sr. No. & Auto Calculation</span>
   </div>
   <form method="POST" action="{{ url_for('add_dispatch') }}">
     <div class="form-grid">
       <div>
-        <label>Sr. No. / क्रम संख्या (Auto)</label>
-        <input type="number" name="sr_no" value="{{ next_sr }}" readonly />
+        <label>Sr. No. / क्रम संख्या (Optional)</label>
+        <input type="number" name="sr_no" value="{{ next_sr }}" placeholder="Auto" />
       </div>
       <div>
-        <label>Challan / Bilty No. (बिल्टी नं.)</label>
-        <input type="text" name="challan_no" value="{{ next_challan }}" required />
+        <label>Challan / Bilty No. (बिल्टी नं. - Optional)</label>
+        <input type="text" name="challan_no" value="{{ next_challan }}" placeholder="Optional" />
       </div>
       <div>
-        <label>Date / दिनांक (Auto)</label>
-        <input type="date" name="dispatch_date" value="{{ today_str }}" required />
+        <label>Date / दिनांक (Optional)</label>
+        <input type="date" name="dispatch_date" value="{{ today_str }}" />
       </div>
       <div>
-        <label>Vehicle No. / गाड़ी नं.</label>
-        <input type="text" name="vehicle_no" placeholder="e.g. TR04GJ-5299" required />
+        <label>Vehicle No. / गाड़ी नं. (Optional)</label>
+        <input type="text" name="vehicle_no" placeholder="Optional e.g. TR04GJ-5299" />
       </div>
       <div>
-        <label>Driver Name / ड्राइवर नाम</label>
-        <input type="text" name="driver_name" placeholder="Driver Name" required />
+        <label>Driver Name / ड्राइवर नाम (Optional)</label>
+        <input type="text" name="driver_name" placeholder="Optional" />
       </div>
       <div>
-        <label>Driver Mobile / ड्राइवर मोबाइल</label>
-        <input type="text" name="driver_mobile" placeholder="10-digit mobile" />
+        <label>Driver Mobile / ड्राइवर मोबाइल (Optional)</label>
+        <input type="text" name="driver_mobile" placeholder="Optional" />
       </div>
       <div>
-        <label>Owner Mobile / मालिक मोबाइल</label>
+        <label>Owner Mobile / मालिक मोबाइल (Optional)</label>
         <input type="text" name="owner_mobile" placeholder="Optional" />
       </div>
       <div>
-        <label>From / कहाँ से</label>
-        <input type="text" name="from_location" placeholder="Origin Plant / City" required />
+        <label>Party / Firm Name / पार्टी नाम (Optional)</label>
+        <input type="text" name="party_name" placeholder="Optional Party Name" />
       </div>
       <div>
-        <label>To / कहाँ तक</label>
-        <input type="text" name="to_location" placeholder="Destination / Party" required />
+        <label>From / कहाँ से (Optional)</label>
+        <input type="text" name="from_location" placeholder="Optional Origin" />
       </div>
       <div>
-        <label>Material / माल का विवरण</label>
-        <input type="text" name="material" value="Goods / माल" required />
+        <label>To / कहाँ तक (Optional)</label>
+        <input type="text" name="to_location" placeholder="Optional Destination" />
       </div>
       <div>
-        <label>Weight / Qty (MT/Unit)</label>
-        <input type="number" step="0.01" id="qty" name="qty" value="30" oninput="autoCalc()" required />
+        <label>Material / माल का विवरण (Optional)</label>
+        <input type="text" name="material" placeholder="Optional Material" />
       </div>
       <div>
-        <label>Receive Weight / प्राप्ति वजन</label>
+        <label>Weight / Qty (Optional)</label>
+        <input type="number" step="0.01" id="qty" name="qty" placeholder="0" oninput="autoCalc()" />
+      </div>
+      <div>
+        <label>Receive Weight / प्राप्ति वजन (Optional)</label>
         <input type="text" name="receive_weight" placeholder="Optional" />
       </div>
       <div>
-        <label>Rate (₹ per MT/Unit)</label>
-        <input type="number" step="0.01" id="rate" name="rate" value="1870" oninput="autoCalc()" required />
+        <label>Rate (₹ - Optional)</label>
+        <input type="number" step="0.01" id="rate" name="rate" placeholder="0" oninput="autoCalc()" />
       </div>
       <div>
-        <label>Driver Advance (₹)</label>
+        <label>Driver Advance (₹ - Optional)</label>
         <input type="number" step="0.01" id="driver_advance" name="driver_advance" value="0" oninput="autoCalc()" />
       </div>
       <div>
-        <label>Diesel / डीज़ल (₹)</label>
+        <label>Diesel / डीज़ल (₹ - Optional)</label>
         <input type="number" step="0.01" id="diesel" name="diesel" value="0" oninput="autoCalc()" />
       </div>
       <div>
-        <label>Party Advance / Cash (₹)</label>
+        <label>Party Advance / Cash (₹ - Optional)</label>
         <input type="number" step="0.01" id="party_advance" name="party_advance" value="0" oninput="autoCalc()" />
       </div>
       <div>
-        <label>Bilty Charge / बिल्टी शुल्क (₹)</label>
+        <label>Bilty Charge / बिल्टी शुल्क (₹ - Optional)</label>
         <input type="number" step="0.01" id="bilty_charge" name="bilty_charge" value="0" oninput="autoCalc()" />
       </div>
       <div>
-        <label>A/c Transfer / खाता ट्रांसफर (₹)</label>
+        <label>A/c Transfer / खाता ट्रांसफर (₹ - Optional)</label>
         <input type="number" step="0.01" id="ac_transfer" name="ac_transfer" value="0" oninput="autoCalc()" />
       </div>
       <div>
-        <label>Remarks / टिप्पणी</label>
+        <label>Received Amount / प्राप्त राशि (₹ - Optional)</label>
+        <input type="number" step="0.01" name="received_amount" value="0" />
+      </div>
+      <div>
+        <label>Payment Status / भुगतान स्थिति</label>
+        <select name="payment_status">
+          <option value="Pending" selected>Pending (बकाया)</option>
+          <option value="Partial">Partial (आंशिक)</option>
+          <option value="Settled">Settled (चुक्ता)</option>
+        </select>
+      </div>
+      <div>
+        <label>Remarks / टिप्पणी (Optional)</label>
         <input type="text" name="remarks" placeholder="Optional note" />
       </div>
     </div>
 
     <div class="auto-summary-bar">
-      <div>Auto Freight (कुल भाड़ा): <strong id="calcFreight">₹56,100.00</strong></div>
+      <div>Auto Freight (कुल भाड़ा): <strong id="calcFreight">₹0.00</strong></div>
       <div>Auto Deductions (कुल कटौती): <strong id="calcDeduction">₹0.00</strong></div>
-      <div>Auto Net Balance (शेष राशि): <strong id="calcBalance" style="color: var(--crimson);">₹56,100.00</strong></div>
+      <div>Auto Net Balance (शेष राशि): <strong id="calcBalance" style="color: var(--crimson);">₹0.00</strong></div>
       <button type="submit" class="btn btn-primary">💾 Save & Create Bill (सेव करें)</button>
     </div>
   </form>
@@ -190,7 +258,13 @@
   <div class="card-header">
     <span>📁 डिस्पैच व बिल रिकॉर्ड / Saved Dispatch & Billing Records</span>
     <form method="GET" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
-      <input type="text" name="q" value="{{ q }}" placeholder="Search vehicle, challan, driver, route..." style="width: 220px;" />
+      <input type="text" name="q" value="{{ q }}" placeholder="Search vehicle, challan, driver, party, route..." style="width: 220px;" />
+      <select name="status" style="width: 145px;">
+        <option value="" {% if not status_filter %}selected{% endif %}>All Status</option>
+        <option value="Pending" {% if status_filter == 'Pending' %}selected{% endif %}>Pending</option>
+        <option value="Partial" {% if status_filter == 'Partial' %}selected{% endif %}>Partial</option>
+        <option value="Settled" {% if status_filter == 'Settled' %}selected{% endif %}>Settled</option>
+      </select>
       <input type="date" name="date" value="{{ date_filter }}" style="width: 155px;" />
       <button type="submit" class="btn btn-navy btn-sm">🔍 Search</button>
       <a href="{{ url_for('dashboard') }}" class="btn btn-outline btn-sm">Reset</a>
@@ -205,39 +279,63 @@
           <th>Date</th>
           <th>Challan</th>
           <th>Vehicle No.</th>
-          <th>Driver</th>
+          <th>Party / Driver</th>
           <th>From → To</th>
           <th>Qty × Rate</th>
           <th>Freight (₹)</th>
           <th>Deduction (₹)</th>
           <th>Balance (₹)</th>
-          <th>Print / Edit</th>
+          <th>Party Payment</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for e in entries %}
+        {% set st = e.payment_status or 'Pending' %}
         <tr>
           <td><strong>{{ e.sr_no }}</strong></td>
-          <td>{{ e.dispatch_date }}</td>
-          <td>{{ e.challan_no }}</td>
-          <td><strong>{{ e.vehicle_no }}</strong></td>
-          <td>{{ e.driver_name }}<br><small>{{ e.driver_mobile }}</small></td>
-          <td>{{ e.from_location }} → {{ e.to_location }}</td>
-          <td>{{ e.qty }} × ₹{{ e.rate }}</td>
-          <td><strong>₹{{ "{:,.2f}".format(e.freight_amount) }}</strong></td>
-          <td>₹{{ "{:,.2f}".format(e.total_deduction) }}</td>
-          <td><strong style="color: var(--crimson);">₹{{ "{:,.2f}".format(e.balance) }}</strong></td>
+          <td>{{ e.dispatch_date or '-' }}</td>
+          <td>{{ e.challan_no or '-' }}</td>
+          <td><strong>{{ e.vehicle_no or '-' }}</strong></td>
+          <td>
+            {% if e.party_name %}<strong>{{ e.party_name }}</strong><br>{% endif %}
+            {{ e.driver_name or '-' }}{% if e.driver_mobile %}<br><small>{{ e.driver_mobile }}</small>{% endif %}
+          </td>
+          <td>{{ e.from_location or '-' }} → {{ e.to_location or '-' }}</td>
+          <td>{{ e.qty or 0 }} × ₹{{ e.rate or 0 }}</td>
+          <td><strong>₹{{ "{:,.2f}".format(e.freight_amount or 0) }}</strong></td>
+          <td>₹{{ "{:,.2f}".format(e.total_deduction or 0) }}</td>
+          <td><strong style="color: var(--crimson);">₹{{ "{:,.2f}".format(e.balance or 0) }}</strong></td>
+          <td>
+            <span class="status-badge {% if st == 'Settled' %}status-settled{% elif st == 'Partial' %}status-partial{% else %}status-pending{% endif %}">
+              {{ st }}
+            </span>
+            <br><small>Recd: ₹{{ "{:,.2f}".format(e.received_amount or 0) }}</small>
+            <form method="POST" action="{{ url_for('update_dispatch_payment', entry_id=e.id) }}" class="pay-inline-form">
+              <input type="number" step="0.01" name="received_amount" value="{{ e.received_amount or 0 }}" title="Received ₹" />
+              <select name="payment_status" title="Payment Status">
+                <option value="Pending" {% if st == 'Pending' %}selected{% endif %}>Pending</option>
+                <option value="Partial" {% if st == 'Partial' %}selected{% endif %}>Partial</option>
+                <option value="Settled" {% if st == 'Settled' %}selected{% endif %}>Settled</option>
+              </select>
+              <button type="submit" class="btn btn-success btn-sm" style="padding: 3px 7px;">✓</button>
+            </form>
+          </td>
           <td style="white-space: nowrap;">
             <a href="{{ url_for('print_challan', entry_id=e.id) }}" target="_blank" class="btn btn-success btn-sm">🧾 Challan</a>
             <a href="{{ url_for('edit_dispatch', entry_id=e.id) }}" class="btn btn-outline btn-sm">✏️ Edit</a>
             <form method="POST" action="{{ url_for('toggle_archive_dispatch', entry_id=e.id) }}" style="display:inline;">
               <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Archive this record? Data remains safely stored.');">📦</button>
             </form>
+            <form method="POST" action="{{ url_for('delete_dispatch', entry_id=e.id) }}" style="display:inline;"
+                  onsubmit="return confirm('⚠️ PERMANENT DELETE: Kya aap Challan #{{ e.challan_no or e.sr_no }} (Vehicle: {{ e.vehicle_no or 'N/A' }}, Balance: ₹{{ '%.2f'|format(e.balance or 0) }}) ko hamesha ke liye delete karna chahte hain? Yeh wapas nahi aayega.');">
+              <button type="submit" class="btn btn-danger-perm btn-sm">🗑️ Del</button>
+            </form>
           </td>
         </tr>
         {% else %}
         <tr>
-          <td colspan="11" style="text-align:center; padding: 18px; color: var(--muted);">
+          <td colspan="12" style="text-align:center; padding: 18px; color: var(--muted);">
             अभी कोई रिकॉर्ड नहीं है। ऊपर दिए गए फॉर्म से पहला चालान जोड़ें / No records yet. Add your first challan above!
           </td>
         </tr>
@@ -293,7 +391,7 @@
     <div class="form-grid">
       <div>
         <label>Date / दिनांक</label>
-        <input type="date" name="row_date" value="{{ today_str }}" required />
+        <input type="date" name="row_date" value="{{ today_str }}" />
       </div>
       {% for col in custom_cols %}
       <div>
