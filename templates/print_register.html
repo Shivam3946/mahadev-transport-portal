@@ -14,14 +14,16 @@
       letter-spacing: 6px; pointer-events: none; white-space: nowrap; z-index: 0;
     }
     .content { position: relative; z-index: 1; }
-    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #b91c1c; padding-bottom: 10px; margin-bottom: 10px; }
-    .brand { font-size: 1.8rem; font-weight: 900; color: #b91c1c; }
-    .tagline { background: #fef3c7; border: 1px solid #f59e0b; color: #78350f; padding: 4px 12px; border-radius: 999px; font-size: 0.82rem; font-weight: 700; display: inline-block; margin-top: 4px; }
+    .header { display: flex; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 3px solid #b91c1c; padding-bottom: 10px; margin-bottom: 10px; }
+    .brand-box { display: flex; align-items: center; gap: 12px; }
+    .brand-logo { width: 54px; height: 54px; object-fit: cover; border-radius: 10px; border: 2px solid #0f294a; background: #fff; flex-shrink: 0; }
+    .brand { font-size: 1.7rem; font-weight: 900; color: #b91c1c; }
+    .tagline { background: #fef3c7; border: 1px solid #f59e0b; color: #78350f; padding: 4px 12px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; display: inline-block; margin-top: 4px; }
     .banner { background: #0f294a; color: #fff; text-align: center; padding: 7px; font-weight: 800; border-radius: 6px; margin-bottom: 10px; }
     table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
     th { background: #0f294a; color: #fff; border: 1px solid #1e293b; padding: 5px 3px; text-align: center; }
     td { border: 1px solid #64748b; padding: 5px 4px; text-align: center; }
-    .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 12px; background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; font-size: 0.88rem; }
+    .summary { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 12px; background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; font-size: 0.84rem; }
     @media print { .no-print { display: none; } body { margin: 0; } }
   </style>
 </head>
@@ -35,9 +37,17 @@
     <div class="watermark">MAHADEV TRANSPORT</div>
     <div class="content">
       <div class="header">
-        <div>
-          <div class="brand">महादेव TRANSPORT • MAHADEV TRANSPORT</div>
-          <div class="tagline">★ भरोसेमंद माल ढुलाई, समय पर डिलीवरी — Trusted Goods Transport & Logistics ★</div>
+        <div class="brand-box">
+          <img
+            src="{{ url_for('static', filename='img/mahadev-logo.png') }}"
+            alt="Mahadev Transport Logo"
+            class="brand-logo"
+            onerror="this.style.display='none';"
+          />
+          <div>
+            <div class="brand">महादेव TRANSPORT • MAHADEV TRANSPORT</div>
+            <div class="tagline">★ भरोसेमंद माल ढुलाई, समय पर डिलीवरी — Trusted Goods Transport & Logistics ★</div>
+          </div>
         </div>
         <div style="text-align: right; font-size: 0.88rem;">
           <div><strong>Director / संचालक:</strong> Prakash Rai (प्रकाश राय)</div>
@@ -72,31 +82,32 @@
           {% for e in entries %}
           <tr>
             <td>{{ e.sr_no }}</td>
-            <td>{{ e.challan_no }}</td>
-            <td>{{ e.dispatch_date }}</td>
-            <td><strong>{{ e.vehicle_no }}</strong></td>
-            <td>{{ e.driver_name }}</td>
-            <td>{{ e.driver_mobile }}</td>
-            <td>{{ e.from_location }} - {{ e.to_location }}</td>
-            <td>{{ e.material }}</td>
-            <td>{{ e.qty }}</td>
-            <td>{{ e.rate }}</td>
-            <td><strong>{{ "{:,.0f}".format(e.freight_amount) }}</strong></td>
-            <td>{{ "{:,.0f}".format(e.driver_advance) }}</td>
-            <td>{{ "{:,.0f}".format(e.diesel) }}</td>
-            <td>{{ "{:,.0f}".format(e.party_advance) }}</td>
-            <td>{{ "{:,.0f}".format(e.bilty_charge + e.ac_transfer) }}</td>
-            <td><strong>{{ "{:,.0f}".format(e.balance) }}</strong></td>
+            <td>{{ e.challan_no or '-' }}</td>
+            <td>{{ e.dispatch_date or '-' }}</td>
+            <td><strong>{{ e.vehicle_no or '-' }}</strong></td>
+            <td>{{ e.driver_name or '-' }}</td>
+            <td>{{ e.driver_mobile or '-' }}</td>
+            <td>{{ e.from_location or '-' }} - {{ e.to_location or '-' }}</td>
+            <td>{{ e.material or '-' }}</td>
+            <td>{{ e.qty or 0 }}</td>
+            <td>{{ e.rate or 0 }}</td>
+            <td><strong>{{ "{:,.0f}".format(e.freight_amount or 0) }}</strong></td>
+            <td>{{ "{:,.0f}".format(e.driver_advance or 0) }}</td>
+            <td>{{ "{:,.0f}".format(e.diesel or 0) }}</td>
+            <td>{{ "{:,.0f}".format(e.party_advance or 0) }}</td>
+            <td>{{ "{:,.0f}".format((e.bilty_charge or 0) + (e.ac_transfer or 0)) }}</td>
+            <td><strong>{{ "{:,.0f}".format(e.balance or 0) }}</strong></td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
 
       <div class="summary">
-        <div><strong>Total Freight:</strong> ₹{{ "{:,.2f}".format(summary.freight) }}</div>
-        <div><strong>Total Advance:</strong> ₹{{ "{:,.2f}".format(summary.advance) }}</div>
-        <div><strong>Diesel + Bilty + A/c:</strong> ₹{{ "{:,.2f}".format(summary.expense) }}</div>
-        <div><strong>Net Balance:</strong> <span style="color:#b91c1c; font-weight:800;">₹{{ "{:,.2f}".format(summary.balance) }}</span></div>
+        <div><strong>Total Freight:</strong> ₹{{ "{:,.2f}".format(summary.freight or 0) }}</div>
+        <div><strong>Total Advance:</strong> ₹{{ "{:,.2f}".format(summary.advance or 0) }}</div>
+        <div><strong>Diesel + Bilty + A/c:</strong> ₹{{ "{:,.2f}".format(summary.expense or 0) }}</div>
+        <div><strong>Net Balance:</strong> <span style="color:#b91c1c; font-weight:800;">₹{{ "{:,.2f}".format(summary.balance or 0) }}</span></div>
+        <div><strong>Party Received:</strong> <span style="color:#15803d; font-weight:800;">₹{{ "{:,.2f}".format(summary.received or 0) }}</span></div>
       </div>
     </div>
   </div>
