@@ -1,8 +1,33 @@
 {% extends "base.html" %}
 {% block title %}Login — MAHADEV TRANSPORT{% endblock %}
+{% block extra_head %}
+<style>
+  .login-logo-wrap {
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .login-logo {
+    width: 74px;
+    height: 74px;
+    object-fit: cover;
+    border-radius: 14px;
+    border: 2px solid var(--navy);
+    background: #fff;
+    box-shadow: 0 3px 10px rgba(15, 41, 74, 0.14);
+  }
+</style>
+{% endblock %}
 {% block content %}
 <div style="max-width: 440px; margin: 28px auto;">
   <div class="card">
+    <div class="login-logo-wrap">
+      <img
+        src="{{ url_for('static', filename='img/mahadev-logo.png') }}"
+        alt="Mahadev Transport Logo"
+        class="login-logo"
+        onerror="this.style.display='none';"
+      />
+    </div>
     <div class="card-header">🔐 सुरक्षित लॉगिन / Secure Portal Login</div>
     <form method="POST">
       <div style="margin-bottom: 12px;">
