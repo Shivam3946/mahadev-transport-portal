@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payment Voucher — MAHADEV TRANSPORT</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", "Noto Sans Devanagari", Arial, sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+      padding: 14px;
+    }
+
+    .toolbar {
+      max-width: 1180px;
+      margin: 0 auto 14px;
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn {
+      border: none;
+      padding: 8px 14px;
+      border-radius: 7px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 0.85rem;
+      display: inline-block;
+    }
+    .btn-navy { background: #0f294a; color: #fff; }
+    .btn-crimson { background: #b91c1c; color: #fff; }
+    .btn-green { background: #15803d; color: #fff; }
+    .btn-outline { background: #fff; color: #0f294a; border: 1px solid #0f294a; }
+
+    .editor-box {
+      max-width: 1180px;
+      margin: 0 auto 16px;
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .editor-head {
+      font-weight: 800;
+      color: #0f294a;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #e2e8f0;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .input-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+      gap: 9px;
+      margin-bottom: 12px;
+    }
+    label {
+      display: block;
+      font-size: 0.73rem;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 3px;
+    }
+    input, select {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid #94a3b8;
+      border-radius: 6px;
+      font-size: 0.84rem;
+    }
+
+    .row-editor {
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #f8fafc;
+    }
+    .row-editor-top {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-weight: 800;
+      font-size: 0.84rem;
+      color: #0f294a;
+    }
+    .entry-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+      gap: 7px;
+      border-top: 1px dashed #cbd5e1;
+      padding-top: 7px;
+      margin-top: 7px;
+    }
+
+    .voucher-sheet {
+      max-width: 1180px;
+      margin: 0 auto;
+      background: #fff;
+      border: 2.5px solid #0f294a;
+      border-radius: 10px;
+      padding: 16px 20px;
+    }
+    .top-brand-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      text-align: center;
+      position: relative;
+      padding-bottom: 8px;
+    }
+    .logo-img {
+      width: 64px;
+      height: 64px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 2px solid #0f294a;
+      background: #fff;
+      flex-shrink: 0;
+    }
+    .company-name {
+      font-size: 2.08rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: #0f294a;
+      line-height: 1.15;
+    }
+    .company-address {
+      font-size: 0.86rem;
+      font-weight: 900;
+      color: #0f172a;
+      margin-top: 3px;
+    }
+    .mob-corner {
+      position: absolute;
+      right: 0;
+      top: 2px;
+      font-size: 0.85rem;
+      font-weight: 900;
+      color: #0f294a;
+      background: #eff6ff;
+      border: 1.5px solid #93c5fd;
+      padding: 4px 10px;
+      border-radius: 6px;
+      text-align: right;
+      line-height: 1.35;
+    }
+    .voucher-badge-wrap {
+      text-align: center;
+      margin: 6px 0 10px;
+    }
+    .voucher-badge {
+      display: inline-block;
+      background: #0f766e;
+      color: #fff;
+      font-weight: 900;
+      font-size: 0.92rem;
+      letter-spacing: 1px;
+      padding: 4px 22px;
+      border-radius: 4px;
+      border: 1px solid #115e59;
+    }
+    .voucher-box {
+      border: 1.8px solid #1e293b;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .meta-strip {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 12px;
+      border-bottom: 1.5px solid #1e293b;
+      font-size: 0.82rem;
+      font-weight: 800;
+      background: #f8fafc;
+    }
+    table.v-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.72rem;
+    }
+    table.v-table th {
+      background: #e2e8f0;
+      color: #0f172a;
+      border: 1px solid #475569;
+      padding: 5px 4px;
+      text-align: center;
+      font-weight: 800;
+    }
+    table.v-table td {
+      border: 1px solid #64748b;
+      padding: 4px 5px;
+      text-align: center;
+    }
+    .route-banner td {
+      background: #e5e7eb !important;
+      text-align: left !important;
+      font-weight: 800;
+      font-size: 0.75rem;
+      color: #0f172a;
+      padding: 5px 8px !important;
+    }
+    .grand-row td {
+      font-weight: 800;
+      background: #fafafa;
+      border-top: 1.5px solid #334155;
+      border-bottom: 1.5px solid #334155;
+    }
+    .summary-footer-box {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 24px;
+      padding: 9px 14px;
+      font-size: 0.88rem;
+      font-weight: 900;
+      background: #fff;
+    }
+    .words-bank-strip {
+      margin-top: 8px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .bank-line {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 6px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .sign-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 22px;
+      font-size: 0.8rem;
+      font-weight: 900;
+      color: #0f172a;
+    }
+
+    @media print {
+      .toolbar, .editor-box { display: none !important; }
+      body { background: #fff; padding: 0; }
+      .voucher-sheet { border: 2px solid #0f294a; border-radius: 0; max-width: 100%; padding: 10px 14px; }
+      .company-name, .company-address, .mob-corner { font-weight: 900 !important; color: #0f172a !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+      <a href="{{ url_for('dashboard') }}" class="btn btn-outline">← Dashboard</a>
+      <button type="button" onclick="addVehicleToLastGroup()" class="btn btn-green">+ Add Vehicle Row (Unlimited)</button>
+      <button type="button" onclick="addRouteGroup()" class="btn btn-navy">+ Add Route Section</button>
+      <button type="button" onclick="clearAllInputs()" class="btn btn-outline">🔄 Clear Fields</button>
+      <span id="totalRowBadge" style="font-size: 0.8rem; font-weight: 800; color: #0f294a;">Vehicles: 1</span>
+    </div>
+    <button type="button" onclick="window.print()" class="btn btn-green">
+      🖨️ Print / Save PDF
+    </button>
+  </div>
+
+  <div class="editor-box">
+    <div class="editor-head">
+      <span>📝 Voucher Details (अंदर के सभी फ़ील्ड ऑप्शनल · Unlimited Vehicles)</span>
+      <button type="button" onclick="addVehicleToLastGroup()" class="btn btn-green" style="padding: 5px 11px; font-size: 0.78rem;">
+        + Add Vehicle Row
+      </button>
+    </div>
+
+    <div class="input-grid">
+      <div>
+        <label>Voucher No. (Optional)</label>
+        <input type="text" id="in_voucher_no" placeholder="Optional e.g. FPV-001" oninput="renderVoucher()" />
+      </div>
+      <div>
+        <label>Voucher Date (Optional)</label>
+        <input type="date" id="in_voucher_date" value="{{ today_str }}" oninput="renderVoucher()" />
+      </div>
+      <div>
+        <label>Debited To (Optional)</label>
+        <input type="text" id="in_debited_to" value="MAHADEV TRANSPORT" oninput="renderVoucher()" />
+      </div>
+      <div>
+        <label>PAN No. (Optional)</label>
+        <input type="text" id="in_pan" placeholder="Optional PAN" oninput="renderVoucher()" />
+      </div>
+      <div>
+        <label>Top Bank Name (Optional)</label>
+        <input type="text" id="in_top_bank" placeholder="Optional Bank" oninput="renderVoucher()" />
+      </div>
+      <div>
+        <label>Top A/c No. (Optional)</label>
+        <input type="text" id="in_top_ac" placeholder="Optional A/c No." oninput="renderVoucher()" />
+      </div>
+      <div>
+        <label>IFSC Code (Optional)</label>
+        <input type="text" id="in_ifsc" placeholder="Optional IFSC" oninput="renderVoucher()" />
+      </div>
+      <div>
+        <label>Rupees In Words (Optional)</label>
+        <input type="text" id="in_words" placeholder="Optional Amount in Words" oninput="renderVoucher()" />
+      </div>
+      <div>
+        <label>Bottom Bank Name (Optional)</label>
+        <input type="text" id="in_bot_bank" placeholder="Optional Bank" oninput="renderVoucher()" />
+      </div>
+      <div>
+        <label>Bottom A/c No. (Optional)</label>
+        <input type="text" id="in_bot_ac" placeholder="Optional A/c No." oninput="renderVoucher()" />
+      </div>
+      <div>
+        <label>Cheque No. (Optional)</label>
+        <input type="text" id="in_cheque_no" placeholder="Optional Cheque No." oninput="renderVoucher()" />
+      </div>
+      <div>
+        <label>Cheque Date (Optional)</label>
+        <input type="date" id="in_cheque_date" oninput="renderVoucher()" />
+      </div>
+    </div>
+
+    <div id="routeGroupsContainer"></div>
+
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+      <button type="button" onclick="addVehicleToLastGroup()" class="btn btn-green">
+        + Add Another Vehicle Row
+      </button>
+      <button type="button" onclick="addRouteGroup()" class="btn btn-crimson">
+        + Add Another Route Section
+      </button>
+    </div>
+  </div>
+
+  <div class="voucher-sheet">
+    <div class="top-brand-wrap">
+      <img
+        src="{{ url_for('static', filename='img/mahadev-logo.png') }}"
+        alt="Mahadev Transport Logo"
+        class="logo-img"
+        onerror="this.style.display='none';"
+      />
+      <div>
+        <div class="company-name"><strong>MAHADEV TRANSPORT</strong></div>
+        <div class="company-address"><strong>Near Jindal Parking, Kharsia Road, Gorkha, Raigarh (C.G.) 496001</strong></div>
+      </div>
+      <!-- CHANGE_MOBILE_HERE: Niche apne dono permanent mobile numbers daal do -->
+      <div class="mob-corner">
+        <div><strong>Mob. No.: 8873257377</strong></div>
+        <div><strong>Mob. No.: 8587835564</strong></div>
+      </div>
+    </div>
+
+    <div class="voucher-badge-wrap">
+      <span class="voucher-badge">PAYMENT VOUCHER</span>
+    </div>
+
+    <div class="voucher-box">
+      <div class="meta-strip">
+        <div>
+          Voucher No. : <span id="out_voucher_no">-</span>
+          &amp; Date : <span id="out_voucher_date">-</span>
+        </div>
+        <div>
+          Bank Name : <span id="out_top_bank">-</span>
+        </div>
+      </div>
+      <div class="meta-strip">
+        <div>
+          Debited To : <span id="out_debited_to">-</span>
+          &amp; PAN : <span id="out_pan">-</span>
+        </div>
+        <div>
+          A/c No. : <span id="out_top_ac">-</span> ,
+          IFSC No. : <span id="out_ifsc">-</span>
+        </div>
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table class="v-table">
+          <thead>
+            <tr>
+              <th>SrNo</th>
+              <th>Challan Date</th>
+              <th>Challan No.</th>
+              <th>Vehicle No.</th>
+              <th>Challan Qty</th>
+              <th>ReceiveQty</th>
+              <th>Freight Qty</th>
+              <th>Rate</th>
+              <th>Freight Amt</th>
+              <th>Short</th>
+              <th>Short Amt</th>
+              <th>Bilty Exp</th>
+              <th>Advance</th>
+              <th>ByTransfer</th>
+              <th>Fuel Amt</th>
+              <th>Net Amount</th>
+            </tr>
+          </thead>
+          <tbody id="voucherTableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="summary-footer-box">
+        <div>Total Deduct : <span id="out_total_deduct" style="color: #b91c1c;">0.00</span></div>
+        <div>NET PAYABLE : <span id="out_net_payable" style="color: #0f294a;">0.00</span></div>
+      </div>
+    </div>
+
+    <div class="words-bank-strip">
+      Rupees In Words : <span id="out_words">-</span>
+    </div>
+
+    <div class="bank-line">
+      <div>Bank Name. : <span id="out_bot_bank">-</span> &nbsp;&nbsp; A/c No.: <span id="out_bot_ac">-</span></div>
+      <div>Cheque No. : <span id="out_cheque_no">-</span> &nbsp;&nbsp; Cheque Date : <span id="out_cheque_date">-</span></div>
+    </div>
+
+    <div class="sign-line">
+      <div><strong>Developed by Tiwari Softwares</strong></div>
+      <div><strong>Accountant / MD</strong></div>
+      <div><strong>Prepared By : Mahadev Transport</strong></div>
+    </div>
+  </div>
+
+  <script>
+    let groupCounter = 0;
+
+    function createEntryRowHTML() {
+      return `
+        <div class="entry-grid">
+          <div><label>SrNo</label><input type="text" class="f-sr" placeholder="Auto" oninput="renderVoucher()" /></div>
+          <div><label>Challan Date</label><input type="date" class="f-cdate" oninput="renderVoucher()" /></div>
+          <div><label>Challan No.</label><input type="text" class="f-cno" placeholder="Optional" oninput="renderVoucher()" /></div>
+          <div><label>Vehicle No.</label><input type="text" class="f-veh" placeholder="Optional" oninput="renderVoucher()" /></div>
+          <div><label>Challan Qty</label><input type="number" step="0.001" class="f-cqty" placeholder="0" oninput="renderVoucher()" /></div>
+          <div><label>ReceiveQty</label><input type="number" step="0.001" class="f-rqty" placeholder="0" oninput="renderVoucher()" /></div>
+          <div><label>Freight Qty</label><input type="number" step="0.001" class="f-fqty" placeholder="Optional" oninput="renderVoucher()" /></div>
+          <div><label>Rate</label><input type="number" step="0.01" class="f-rate" placeholder="0" oninput="renderVoucher()" /></div>
+          <div><label>Short</label><input type="number" step="0.001" class="f-short" placeholder="0" oninput="renderVoucher()" /></div>
+          <div><label>Short Amt</label><input type="number" step="0.01" class="f-samt" placeholder="0" oninput="renderVoucher()" /></div>
+          <div><label>Bilty Exp</label><input type="number" step="0.01" class="f-bilty" placeholder="0" oninput="renderVoucher()" /></div>
+          <div><label>Advance</label><input type="number" step="0.01" class="f-adv" placeholder="0" oninput="renderVoucher()" /></div>
+          <div><label>ByTransfer</label><input type="number" step="0.01" class="f-trans" placeholder="0" oninput="renderVoucher()" /></div>
+          <div><label>Fuel Amt</label><input type="number" step="0.01" class="f-fuel" placeholder="0" oninput="renderVoucher()" /></div>
+          <div style="display:flex; align-items:end;">
+            <button type="button" class="btn btn-outline" style="padding:5px 8px; font-size:0.74rem;" onclick="this.closest('.entry-grid').remove(); renderVoucher();">✕ Row</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function addRouteGroup(defaultRoute = "", defaultMaterial = "") {
+      groupCounter += 1;
+      const id = groupCounter;
+      const box = document.createElement("div");
+      box.className = "row-editor";
+      box.dataset.groupId = id;
+      box.innerHTML = `
+        <div class="row-editor-top">
+          <span>Route / Vehicle Section #${id}</span>
+          <div>
+            <button type="button" class="btn btn-navy" style="padding:4px 9px; font-size:0.75rem;" onclick="addEntryToGroup(${id})">+ Add Vehicle Row</button>
+            <button type="button" class="btn btn-crimson" style="padding:4px 9px; font-size:0.75rem;" onclick="this.closest('.row-editor').remove(); renderVoucher();">Remove Section</button>
+          </div>
+        </div>
+        <div class="input-grid" style="margin-bottom: 6px;">
+          <div>
+            <label>Route Name (Optional)</label>
+            <input type="text" class="g-route" value="${defaultRoute}" placeholder="Optional Route" oninput="renderVoucher()" />
+          </div>
+          <div>
+            <label>Material / Goods (Optional)</label>
+            <input type="text" class="g-mat" value="${defaultMaterial}" placeholder="Optional Material" oninput="renderVoucher()" />
+          </div>
+        </div>
+        <div class="entries-list"></div>
+      `;
+      document.getElementById("routeGroupsContainer").appendChild(box);
+      addEntryToGroup(id);
+    }
+
+    function addEntryToGroup(groupId) {
+      const grp = document.querySelector(`.row-editor[data-group-id="${groupId}"] .entries-list`);
+      if (grp) {
+        grp.insertAdjacentHTML("beforeend", createEntryRowHTML());
+        renderVoucher();
+      }
+    }
+
+    function addVehicleToLastGroup() {
+      const groups = document.querySelectorAll("#routeGroupsContainer .row-editor");
+      if (!groups.length) {
+        addRouteGroup();
+        return;
+      }
+      const lastGroup = groups[groups.length - 1];
+      const list = lastGroup.querySelector(".entries-list");
+      list.insertAdjacentHTML("beforeend", createEntryRowHTML());
+      renderVoucher();
+    }
+
+    function numVal(el) { return el ? (parseFloat(el.value) || 0) : 0; }
+    function txtVal(el, fallback = "") { return el && el.value.trim() ? el.value.trim() : fallback; }
+    function fmt2(n) { return (Number(n) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function fmt3(n) { return (Number(n) || 0).toFixed(3); }
+
+    function renderVoucher() {
+      document.getElementById("out_voucher_no").textContent = txtVal(document.getElementById("in_voucher_no"), "-");
+      document.getElementById("out_voucher_date").textContent = txtVal(document.getElementById("in_voucher_date"), "-");
+      document.getElementById("out_debited_to").textContent = txtVal(document.getElementById("in_debited_to"), "-");
+      document.getElementById("out_pan").textContent = txtVal(document.getElementById("in_pan"), "-");
+      document.getElementById("out_top_bank").textContent = txtVal(document.getElementById("in_top_bank"), "-");
+      document.getElementById("out_top_ac").textContent = txtVal(document.getElementById("in_top_ac"), "-");
+      document.getElementById("out_ifsc").textContent = txtVal(document.getElementById("in_ifsc"), "-");
+      document.getElementById("out_words").textContent = txtVal(document.getElementById("in_words"), "-");
+      document.getElementById("out_bot_bank").textContent = txtVal(document.getElementById("in_bot_bank"), "-");
+      document.getElementById("out_bot_ac").textContent = txtVal(document.getElementById("in_bot_ac"), "-");
+      document.getElementById("out_cheque_no").textContent = txtVal(document.getElementById("in_cheque_no"), "-");
+      document.getElementById("out_cheque_date").textContent = txtVal(document.getElementById("in_cheque_date"), "-");
+
+      const tbody = document.getElementById("voucherTableBody");
+      tbody.innerHTML = "";
+
+      let grandAllDeduct = 0;
+      let grandAllNetPayable = 0;
+      let totalVehicleRows = 0;
+
+      document.querySelectorAll("#routeGroupsContainer .row-editor").forEach((grp, gIdx) => {
+        const route = txtVal(grp.querySelector(".g-route"));
+        const mat = txtVal(grp.querySelector(".g-mat"));
+        const labelText = route || mat
+          ? `Route Name : ${route || "-"} ${mat ? " : " + mat : ""}`
+          : `Route / Vehicle Section ${gIdx + 1}`;
+
+        const bannerTr = document.createElement("tr");
+        bannerTr.className = "route-banner";
+        bannerTr.innerHTML = `<td colspan="16">${labelText}</td>`;
+        tbody.appendChild(bannerTr);
+
+        let sumCQty = 0, sumRQty = 0, sumFQty = 0;
+        let sumFreight = 0, sumShortAmt = 0, sumBilty = 0;
+        let sumAdv = 0, sumTrans = 0, sumFuel = 0, sumNet = 0;
+
+        grp.querySelectorAll(".entry-grid").forEach((row, idx) => {
+          totalVehicleRows += 1;
+          const sr = txtVal(row.querySelector(".f-sr"), String(idx + 1));
+          const cdate = txtVal(row.querySelector(".f-cdate"), "");
+          const cno = txtVal(row.querySelector(".f-cno"), "");
+          const veh = txtVal(row.querySelector(".f-veh"), "");
+          const cqty = numVal(row.querySelector(".f-cqty"));
+          const rqty = numVal(row.querySelector(".f-rqty"));
+          const fqtyEl = row.querySelector(".f-fqty");
+          const fqty = fqtyEl && fqtyEl.value.trim() !== "" ? numVal(fqtyEl) : (rqty || cqty);
+          const rate = numVal(row.querySelector(".f-rate"));
+          const shortVal = numVal(row.querySelector(".f-short"));
+          const samVal = numVal(row.querySelector(".f-samt"));
+          const bilty = numVal(row.querySelector(".f-bilty"));
+          const adv = numVal(row.querySelector(".f-adv"));
+          const trans = numVal(row.querySelector(".f-trans"));
+          const fuel = numVal(row.querySelector(".f-fuel"));
+
+          const freightAmt = fqty * rate;
+          const rowDeduct = samVal + bilty + adv + trans + fuel;
+          const netAmt = freightAmt - rowDeduct;
+
+          sumCQty += cqty;
+          sumRQty += rqty;
+          sumFQty += fqty;
+          sumFreight += freightAmt;
+          sumShortAmt += samVal;
+          sumBilty += bilty;
+          sumAdv += adv;
+          sumTrans += trans;
+          sumFuel += fuel;
+          sumNet += netAmt;
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${sr}</td>
+            <td>${cdate}</td>
+            <td>${cno}</td>
+            <td><strong>${veh}</strong></td>
+            <td>${cqty ? fmt3(cqty) : ""}</td>
+            <td>${rqty ? fmt3(rqty) : ""}</td>
+            <td>${fqty ? fmt3(fqty) : ""}</td>
+            <td>${rate ? fmt2(rate) : ""}</td>
+            <td>${freightAmt ? fmt2(freightAmt) : ""}</td>
+            <td>${shortVal ? fmt3(shortVal) : ""}</td>
+            <td>${samVal ? fmt2(samVal) : ""}</td>
+            <td>${bilty ? fmt2(bilty) : ""}</td>
+            <td>${adv ? fmt2(adv) : ""}</td>
+            <td>${trans ? fmt2(trans) : ""}</td>
+            <td>${fuel ? fmt2(fuel) : ""}</td>
+            <td><strong>${fmt2(netAmt)}</strong></td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        const totalDeductInGroup = sumShortAmt + sumBilty + sumAdv + sumTrans + sumFuel;
+        grandAllDeduct += totalDeductInGroup;
+        grandAllNetPayable += sumNet;
+
+        const grandTr = document.createElement("tr");
+        grandTr.className = "grand-row";
+        grandTr.innerHTML = `
+          <td colspan="4" style="text-align:right; padding-right:10px;">Grand Total :</td>
+          <td>${fmt3(sumCQty)}</td>
+          <td>${fmt3(sumRQty)}</td>
+          <td>${fmt3(sumFQty)}</td>
+          <td></td>
+          <td>${fmt2(sumFreight)}</td>
+          <td></td>
+          <td>${fmt2(sumShortAmt)}</td>
+          <td>${fmt2(sumBilty)}</td>
+          <td>${fmt2(sumAdv)}</td>
+          <td>${fmt2(sumTrans)}</td>
+          <td>${fmt2(sumFuel)}</td>
+          <td>${fmt2(sumNet)}</td>
+        `;
+        tbody.appendChild(grandTr);
+      });
+
+      document.getElementById("totalRowBadge").textContent = "Vehicles: " + totalVehicleRows;
+      document.getElementById("out_total_deduct").textContent = fmt2(grandAllDeduct);
+      document.getElementById("out_net_payable").textContent = fmt2(grandAllNetPayable);
+    }
+
+    function clearAllInputs() {
+      document.querySelectorAll(".editor-box input").forEach(inp => {
+        if (inp.id !== "in_debited_to") inp.value = "";
+      });
+      renderVoucher();
+    }
+
+    addRouteGroup();
+  </script>
+</body>
+</html>
