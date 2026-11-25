@@ -605,6 +605,11 @@ def print_register():
 def print_challan(entry_id):
     entry = db.get_or_404(DispatchEntry, entry_id)
     return render_template("print_challan.html", entry=entry)
+@app.route("/payment-voucher-form", methods=["GET"])
+@login_required
+def payment_voucher_form():
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    return render_template("payment_voucher_form.html", today_str=today_str)
 
 
 # -------------------- CUSTOM REGISTER (DYNAMIC ADD / DELETE COLUMNS) --------------------
