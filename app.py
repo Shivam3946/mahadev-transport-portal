@@ -193,6 +193,30 @@ class CustomRow(db.Model):
             return {}
 
 
+class PaymentVoucher(db.Model):
+    __tablename__ = "payment_vouchers"
+    id = db.Column(db.Integer, primary_key=True)
+    voucher_no = db.Column(db.String(80), default="")
+    voucher_date = db.Column(db.String(20), default="")
+    debited_to = db.Column(db.String(160), default="MAHADEV TRANSPORT")
+    pan_no = db.Column(db.String(40), default="")
+    top_bank = db.Column(db.String(120), default="")
+    top_ac = db.Column(db.String(80), default="")
+    ifsc_code = db.Column(db.String(40), default="")
+    rupees_words = db.Column(db.String(300), default="")
+    bot_bank = db.Column(db.String(120), default="")
+    bot_ac = db.Column(db.String(80), default="")
+    cheque_no = db.Column(db.String(80), default="")
+    cheque_date = db.Column(db.String(20), default="")
+    total_deduct = db.Column(db.Float, default=0.0)
+    net_payable = db.Column(db.Float, default=0.0)
+    routes_summary = db.Column(db.Text, default="")
+    vehicles_summary = db.Column(db.Text, default="")
+    payload_json = db.Column(db.Text, nullable=False)
+    is_archived = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, int(user_id))
@@ -605,11 +629,123 @@ def print_register():
 def print_challan(entry_id):
     entry = db.get_or_404(DispatchEntry, entry_id)
     return render_template("print_challan.html", entry=entry)
+
+
 @app.route("/payment-voucher-form", methods=["GET"])
 @login_required
 def payment_voucher_form():
     today_str = datetime.now().strftime("%Y-%m-%d")
-    return render_template("payment_voucher_form.html", today_str=today_str)
+    q = (request.args.get("q") or "").strip().lower()
+    date_from = (request.args.get("date_from") or "").strip()
+    date_to = (request.args.get("date_to") or "").strip()
+    view_tab = (request.args.get("tab") or "active").strip().lower()
+
+    query = PaymentVoucher.query.filter_by(is_archived=(view_tab == "archived"))
+    if date_from:
+        query = query.filter(PaymentVoucher.voucher_date >= date_from)
+    if date_to:
+        query = query.filter(PaymentVoucher.voucher_date <= date_to)
+
+    all_vouchers = query.order_by(PaymentVoucher.id.desc()).all()
+    if q:
+        filtered = []
+        for v in all_vouchers:
+            hay = " ".join([
+                v.voucher_no or "",
+                v.voucher_date or "",
+                v.debited_to or "",
+                v.routes_summary or "",
+                v.vehicles_summary or "",
+                f"{v.net_payable or 0:.2f}",
+            ]).lower()
+            if q in hay:
+                filtered.append(v)
+        all_vouchers = filtered
+
+    period_total_payable = sum((v.net_payable or 0.0) for v in all_vouchers)
+    period_total_deduct = sum((v.total_deduct or 0.0) for v in all_vouchers)
+
+    return render_template(
+        "payment_voucher_form.html",
+        today_str=today_str,
+        vouchers=all_vouchers,
+        q=request.args.get("q") or "",
+        date_from=date_from,
+        date_to=date_to,
+        view_tab=view_tab,
+        period_total_payable=period_total_payable,
+        period_total_deduct=period_total_deduct,
+    )
+
+
+@app.route("/payment-voucher/save", methods=["POST"])
+@login_required
+def save_payment_voucher():
+    data = request.get_json(silent=True) or {}
+    voucher_id = data.get("voucher_id")
+
+    routes_list = data.get("routes") or []
+    route_names = []
+    vehicle_nos = []
+    for grp in routes_list:
+        r_name = (grp.get("route") or "").strip()
+        m_name = (grp.get("material") or "").strip()
+        if r_name or m_name:
+            route_names.append(f"{r_name or '-'} ({m_name})" if m_name else r_name)
+        for row in (grp.get("rows") or []):
+            veh = (row.get("veh") or "").strip()
+            if veh:
+                vehicle_nos.append(veh)
+
+    if voucher_id:
+        v = PaymentVoucher.query.get(int(voucher_id))
+        if not v:
+            return jsonify({"ok": False, "error": "Voucher not found"}), 404
+    else:
+        v = PaymentVoucher()
+        db.session.add(v)
+
+    v.voucher_no = (data.get("voucher_no") or "").strip()
+    v.voucher_date = (data.get("voucher_date") or "").strip()
+    v.debited_to = (data.get("debited_to") or "MAHADEV TRANSPORT").strip()
+    v.pan_no = (data.get("pan_no") or "").strip()
+    v.top_bank = (data.get("top_bank") or "").strip()
+    v.top_ac = (data.get("top_ac") or "").strip()
+    v.ifsc_code = (data.get("ifsc_code") or "").strip()
+    v.rupees_words = (data.get("rupees_words") or "").strip()
+    v.bot_bank = (data.get("bot_bank") or "").strip()
+    v.bot_ac = (data.get("bot_ac") or "").strip()
+    v.cheque_no = (data.get("cheque_no") or "").strip()
+    v.cheque_date = (data.get("cheque_date") or "").strip()
+    v.total_deduct = float(data.get("total_deduct") or 0.0)
+    v.net_payable = float(data.get("net_payable") or 0.0)
+    v.routes_summary = ", ".join(dict.fromkeys(route_names))
+    v.vehicles_summary = ", ".join(dict.fromkeys(vehicle_nos))
+    v.payload_json = json.dumps(data, ensure_ascii=False)
+
+    db.session.commit()
+    return jsonify({"ok": True, "voucher_id": v.id})
+
+
+@app.route("/payment-voucher/<int:voucher_id>/archive", methods=["POST"])
+@login_required
+def toggle_archive_payment_voucher(voucher_id):
+    v = PaymentVoucher.query.get_or_404(voucher_id)
+    v.is_archived = not bool(v.is_archived)
+    db.session.commit()
+    flash("Voucher archive status updated.", "success")
+    return redirect(url_for("payment_voucher_form", tab="archived" if not v.is_archived else "active"))
+
+
+@app.route("/payment-voucher/<int:voucher_id>/delete", methods=["POST"])
+@login_required
+def delete_payment_voucher(voucher_id):
+    v = PaymentVoucher.query.get_or_404(voucher_id)
+    tab = "archived" if v.is_archived else "active"
+    db.session.delete(v)
+    db.session.commit()
+    flash("Payment voucher permanently deleted.", "success")
+    return redirect(url_for("payment_voucher_form", tab=tab))
 
 
 # -------------------- CUSTOM REGISTER (DYNAMIC ADD / DELETE COLUMNS) --------------------
