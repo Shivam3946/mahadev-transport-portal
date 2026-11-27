@@ -312,6 +312,14 @@ def to_float(val, default=0.0):
         return default
 
 
+def _safe_csv_date(val):
+    """Format date cleanly so spreadsheets display the exact date instead of ####."""
+    s = str(val or "").strip()
+    if not s:
+        return ""
+    return f'="{s}"'
+
+
 def _compute_voucher_totals(routes_list):
     total_deduct = 0.0
     total_net = 0.0
@@ -896,7 +904,7 @@ def export_csv():
     ])
     for e in entries:
         writer.writerow([
-            e.sr_no, e.challan_no, e.dispatch_date, e.vehicle_no, e.driver_name, e.driver_mobile,
+            e.sr_no, e.challan_no, _safe_csv_date(e.dispatch_date), e.vehicle_no, e.driver_name, e.driver_mobile,
             e.party_name, e.from_location, e.to_location, e.material, e.qty, e.rate, e.freight_amount,
             e.driver_advance, e.diesel, e.party_advance, e.bilty_charge, e.ac_transfer,
             e.total_deduction, e.balance, e.received_amount, e.payment_status, e.remarks
