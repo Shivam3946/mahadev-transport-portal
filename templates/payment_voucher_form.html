@@ -413,7 +413,7 @@
 
   <div class="editor-box">
     <div class="editor-head">
-      <span>📝 Voucher Details (सभी फ़ील्ड व Party Advance / GPS Amount / Tarpaulin 100% Optional)</span>
+      <span>📝 Voucher Details (सभी फ़ील्ड व Party Advance / GPS Amount / Tarpaulin 100% Optional · Unlimited Edits)</span>
       <div style="display: flex; gap: 8px; flex-wrap: wrap;">
         <button type="button" id="editorSaveBtn" onclick="saveVoucherOnly()" class="btn btn-navy" style="padding: 5px 11px; font-size: 0.78rem;">
           💾 Save Voucher
@@ -429,51 +429,51 @@
     <div class="input-grid">
       <div>
         <label>Voucher No. (Optional)</label>
-        <input type="text" id="in_voucher_no" placeholder="Optional e.g. FPV-001" oninput="renderVoucher()" />
+        <input type="text" id="in_voucher_no" placeholder="Optional e.g. FPV-001" oninput="scheduleRender()" />
       </div>
       <div>
         <label>Voucher Date (Optional)</label>
-        <input type="date" id="in_voucher_date" value="{{ today_str }}" oninput="renderVoucher()" />
+        <input type="date" id="in_voucher_date" value="{{ today_str }}" oninput="scheduleRender()" />
       </div>
       <div>
         <label>Debited To (Optional)</label>
-        <input type="text" id="in_debited_to" value="MAHADEV TRANSPORT" oninput="renderVoucher()" />
+        <input type="text" id="in_debited_to" value="MAHADEV TRANSPORT" oninput="scheduleRender()" />
       </div>
       <div>
         <label>PAN No. (Optional)</label>
-        <input type="text" id="in_pan" placeholder="Optional PAN" oninput="renderVoucher()" />
+        <input type="text" id="in_pan" placeholder="Optional PAN" oninput="scheduleRender()" />
       </div>
       <div>
         <label>Top Bank Name (Optional)</label>
-        <input type="text" id="in_top_bank" placeholder="Optional Bank" oninput="renderVoucher()" />
+        <input type="text" id="in_top_bank" placeholder="Optional Bank" oninput="scheduleRender()" />
       </div>
       <div>
         <label>Top A/c No. (Optional)</label>
-        <input type="text" id="in_top_ac" placeholder="Optional A/c No." oninput="renderVoucher()" />
+        <input type="text" id="in_top_ac" placeholder="Optional A/c No." oninput="scheduleRender()" />
       </div>
       <div>
         <label>IFSC Code (Optional)</label>
-        <input type="text" id="in_ifsc" placeholder="Optional IFSC" oninput="renderVoucher()" />
+        <input type="text" id="in_ifsc" placeholder="Optional IFSC" oninput="scheduleRender()" />
       </div>
       <div>
         <label>Rupees In Words (Optional)</label>
-        <input type="text" id="in_words" placeholder="Optional Amount in Words" oninput="renderVoucher()" />
+        <input type="text" id="in_words" placeholder="Optional Amount in Words" oninput="scheduleRender()" />
       </div>
       <div>
         <label>Bottom Bank Name (Optional)</label>
-        <input type="text" id="in_bot_bank" placeholder="Optional Bank" oninput="renderVoucher()" />
+        <input type="text" id="in_bot_bank" placeholder="Optional Bank" oninput="scheduleRender()" />
       </div>
       <div>
         <label>Bottom A/c No. (Optional)</label>
-        <input type="text" id="in_bot_ac" placeholder="Optional A/c No." oninput="renderVoucher()" />
+        <input type="text" id="in_bot_ac" placeholder="Optional A/c No." oninput="scheduleRender()" />
       </div>
       <div>
         <label>Cheque No. (Optional)</label>
-        <input type="text" id="in_cheque_no" placeholder="Optional Cheque No." oninput="renderVoucher()" />
+        <input type="text" id="in_cheque_no" placeholder="Optional Cheque No." oninput="scheduleRender()" />
       </div>
       <div>
         <label>Cheque Date (Optional)</label>
-        <input type="date" id="in_cheque_date" oninput="renderVoucher()" />
+        <input type="date" id="in_cheque_date" oninput="scheduleRender()" />
       </div>
     </div>
 
@@ -507,10 +507,9 @@
         </div>
       </div>
 
-      <!-- Apne dono mobile numbers yahan daal dein -->
       <div class="mob-corner">
         <div><strong>Mob. No.: 8873257377</strong></div>
-        <div><strong>Mob. No.: 8587835564</strong></div>
+        <div><strong>Mob. No.:8587835564</strong></div>
       </div>
     </div>
 
@@ -647,7 +646,7 @@
         </thead>
         <tbody>
           {% for v in vouchers %}
-          <tr>
+          <tr id="voucher-row-{{ v.id }}">
             <td><strong>{{ v.id }}</strong></td>
             <td>{{ v.voucher_date or '-' }}</td>
             <td><strong>{{ v.voucher_no or '-' }}</strong></td>
@@ -710,6 +709,7 @@
   <script>
     let groupCounter = 0;
     let latestTotals = { totalDeduct: 0, netPayable: 0 };
+    let renderRafId = null;
 
     function escAttr(s) {
       return String(s ?? "")
@@ -718,44 +718,60 @@
         .replace(/</g, "&lt;");
     }
 
+    function scheduleRender() {
+      if (renderRafId !== null) return;
+      renderRafId = window.requestAnimationFrame(() => {
+        renderRafId = null;
+        renderVoucher();
+      });
+    }
+
+    function getActiveVoucherId() {
+      const raw = (document.getElementById("in_voucher_id").value || "").trim();
+      if (!raw) return null;
+      const parsed = parseInt(raw, 10);
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    }
+
     function updateSaveButtonLabels(voucherId) {
-      const label = voucherId ? `💾 Update Voucher #${voucherId}` : "💾 Save Voucher";
+      const cleanId = voucherId ? String(voucherId).trim() : "";
+      const label = cleanId ? `💾 Update Voucher #${cleanId}` : "💾 Save Voucher";
       const quickBtn = document.getElementById("quickSaveBtn");
       const editorBtn = document.getElementById("editorSaveBtn");
       const bottomBtn = document.getElementById("bottomSaveBtn");
       if (quickBtn) quickBtn.textContent = label;
       if (editorBtn) editorBtn.textContent = label;
-      if (bottomBtn) bottomBtn.textContent = voucherId ? `💾 Save & Update Voucher #${voucherId}` : "💾 Save / Update Voucher";
+      if (bottomBtn) bottomBtn.textContent = cleanId ? `💾 Save & Update Voucher #${cleanId}` : "💾 Save / Update Voucher";
     }
 
     function createEntryRowHTML(rowData = {}) {
       return `
         <div class="entry-grid">
-          <div><label>SrNo (Opt)</label><input type="text" class="f-sr" value="${escAttr(rowData.sr || "")}" placeholder="Auto" oninput="renderVoucher()" /></div>
-          <div><label>Challan Date (Opt)</label><input type="date" class="f-cdate" value="${escAttr(rowData.cdate || "")}" oninput="renderVoucher()" /></div>
-          <div><label>Challan No. (Opt)</label><input type="text" class="f-cno" value="${escAttr(rowData.cno || "")}" placeholder="Optional" oninput="renderVoucher()" /></div>
-          <div><label>Vehicle No. (Opt)</label><input type="text" class="f-veh" value="${escAttr(rowData.veh || "")}" placeholder="Optional" oninput="renderVoucher()" /></div>
-          <div><label>Challan Qty (Opt)</label><input type="number" step="0.001" class="f-cqty" value="${escAttr(rowData.cqty || "")}" placeholder="0" oninput="renderVoucher()" /></div>
-          <div><label>Receive Qty (Opt)</label><input type="number" step="0.001" class="f-rqty" value="${escAttr(rowData.rqty || "")}" placeholder="0" oninput="renderVoucher()" /></div>
-          <div><label>Freight Qty (Opt)</label><input type="number" step="0.001" class="f-fqty" value="${escAttr(rowData.fqty || "")}" placeholder="Optional" oninput="renderVoucher()" /></div>
-          <div><label>Rate (Opt)</label><input type="number" step="0.01" class="f-rate" value="${escAttr(rowData.rate || "")}" placeholder="0" oninput="renderVoucher()" /></div>
-          <div><label>Short (Opt)</label><input type="number" step="0.001" class="f-short" value="${escAttr(rowData.short || "")}" placeholder="0" oninput="renderVoucher()" /></div>
-          <div><label>Short Amt (Opt)</label><input type="number" step="0.01" class="f-samt" value="${escAttr(rowData.samt || "")}" placeholder="0" oninput="renderVoucher()" /></div>
-          <div><label>Bilty Exp (Opt)</label><input type="number" step="0.01" class="f-bilty" value="${escAttr(rowData.bilty || "")}" placeholder="0" oninput="renderVoucher()" /></div>
-          <div><label>Advance (Opt)</label><input type="number" step="0.01" class="f-adv" value="${escAttr(rowData.adv || "")}" placeholder="0" oninput="renderVoucher()" /></div>
-          <div><label>Party Adv (Opt)</label><input type="number" step="0.01" class="f-party-adv" value="${escAttr(rowData.party_adv || "")}" placeholder="0" oninput="renderVoucher()" /></div>
-          <div><label>ByTransfer (Opt)</label><input type="number" step="0.01" class="f-trans" value="${escAttr(rowData.trans || "")}" placeholder="0" oninput="renderVoucher()" /></div>
-          <div><label>Fuel Amt (Opt)</label><input type="number" step="0.01" class="f-fuel" value="${escAttr(rowData.fuel || "")}" placeholder="0" oninput="renderVoucher()" /></div>
-          <div><label>GPS Amt (Opt)</label><input type="number" step="0.01" class="f-gps" value="${escAttr(rowData.gps_amt || "")}" placeholder="0" oninput="renderVoucher()" /></div>
-          <div><label>Tarpaulin (Opt)</label><input type="number" step="0.01" class="f-tarpaulin" value="${escAttr(rowData.tarpaulin || "")}" placeholder="0" oninput="renderVoucher()" /></div>
+          <div><label>SrNo (Opt)</label><input type="text" class="f-sr" value="${escAttr(rowData.sr || "")}" placeholder="Auto" oninput="scheduleRender()" /></div>
+          <div><label>Challan Date (Opt)</label><input type="date" class="f-cdate" value="${escAttr(rowData.cdate || "")}" oninput="scheduleRender()" /></div>
+          <div><label>Challan No. (Opt)</label><input type="text" class="f-cno" value="${escAttr(rowData.cno || "")}" placeholder="Optional" oninput="scheduleRender()" /></div>
+          <div><label>Vehicle No. (Opt)</label><input type="text" class="f-veh" value="${escAttr(rowData.veh || "")}" placeholder="Optional" oninput="scheduleRender()" /></div>
+          <div><label>Challan Qty (Opt)</label><input type="number" step="0.001" class="f-cqty" value="${escAttr(rowData.cqty || "")}" placeholder="0" oninput="scheduleRender()" /></div>
+          <div><label>Receive Qty (Opt)</label><input type="number" step="0.001" class="f-rqty" value="${escAttr(rowData.rqty || "")}" placeholder="0" oninput="scheduleRender()" /></div>
+          <div><label>Freight Qty (Opt)</label><input type="number" step="0.001" class="f-fqty" value="${escAttr(rowData.fqty || "")}" placeholder="Optional" oninput="scheduleRender()" /></div>
+          <div><label>Rate (Opt)</label><input type="number" step="0.01" class="f-rate" value="${escAttr(rowData.rate || "")}" placeholder="0" oninput="scheduleRender()" /></div>
+          <div><label>Short (Opt)</label><input type="number" step="0.001" class="f-short" value="${escAttr(rowData.short || "")}" placeholder="0" oninput="scheduleRender()" /></div>
+          <div><label>Short Amt (Opt)</label><input type="number" step="0.01" class="f-samt" value="${escAttr(rowData.samt || "")}" placeholder="0" oninput="scheduleRender()" /></div>
+          <div><label>Bilty Exp (Opt)</label><input type="number" step="0.01" class="f-bilty" value="${escAttr(rowData.bilty || "")}" placeholder="0" oninput="scheduleRender()" /></div>
+          <div><label>Advance (Opt)</label><input type="number" step="0.01" class="f-adv" value="${escAttr(rowData.adv || "")}" placeholder="0" oninput="scheduleRender()" /></div>
+          <div><label>Party Adv (Opt)</label><input type="number" step="0.01" class="f-party-adv" value="${escAttr(rowData.party_adv || "")}" placeholder="0" oninput="scheduleRender()" /></div>
+          <div><label>ByTransfer (Opt)</label><input type="number" step="0.01" class="f-trans" value="${escAttr(rowData.trans || "")}" placeholder="0" oninput="scheduleRender()" /></div>
+          <div><label>Fuel Amt (Opt)</label><input type="number" step="0.01" class="f-fuel" value="${escAttr(rowData.fuel || "")}" placeholder="0" oninput="scheduleRender()" /></div>
+          <div><label>GPS Amt (Opt)</label><input type="number" step="0.01" class="f-gps" value="${escAttr(rowData.gps_amt || "")}" placeholder="0" oninput="scheduleRender()" /></div>
+          <div><label>Tarpaulin (Opt)</label><input type="number" step="0.01" class="f-tarpaulin" value="${escAttr(rowData.tarpaulin || "")}" placeholder="0" oninput="scheduleRender()" /></div>
           <div style="display:flex; align-items:end;">
-            <button type="button" class="btn btn-outline" style="padding:5px 8px; font-size:0.74rem;" onclick="this.closest('.entry-grid').remove(); renderVoucher();">✕ Row</button>
+            <button type="button" class="btn btn-outline" style="padding:5px 8px; font-size:0.74rem;" onclick="this.closest('.entry-grid').remove(); scheduleRender();">✕ Row</button>
           </div>
         </div>
       `;
     }
 
-    function addRouteGroup(defaultRoute = "", defaultMaterial = "", rowsArray = null) {
+    function addRouteGroup(defaultRoute = "", defaultMaterial = "", rowsArray = null, skipRender = false) {
       groupCounter += 1;
       const id = groupCounter;
       const box = document.createElement("div");
@@ -766,17 +782,17 @@
           <span>Route / Vehicle Section #${id}</span>
           <div>
             <button type="button" class="btn btn-navy" style="padding:4px 9px; font-size:0.75rem;" onclick="addEntryToGroup(${id})">+ Add Vehicle Row</button>
-            <button type="button" class="btn btn-crimson" style="padding:4px 9px; font-size:0.75rem;" onclick="this.closest('.row-editor').remove(); renderVoucher();">Remove Section</button>
+            <button type="button" class="btn btn-crimson" style="padding:4px 9px; font-size:0.75rem;" onclick="this.closest('.row-editor').remove(); scheduleRender();">Remove Section</button>
           </div>
         </div>
         <div class="input-grid" style="margin-bottom: 6px;">
           <div>
             <label>Route Name (Optional)</label>
-            <input type="text" class="g-route" value="${escAttr(defaultRoute)}" placeholder="Optional Route" oninput="renderVoucher()" />
+            <input type="text" class="g-route" value="${escAttr(defaultRoute)}" placeholder="Optional Route" oninput="scheduleRender()" />
           </div>
           <div>
             <label>Material / Goods (Optional)</label>
-            <input type="text" class="g-mat" value="${escAttr(defaultMaterial)}" placeholder="Optional Material" oninput="renderVoucher()" />
+            <input type="text" class="g-mat" value="${escAttr(defaultMaterial)}" placeholder="Optional Material" oninput="scheduleRender()" />
           </div>
         </div>
         <div class="entries-list"></div>
@@ -784,18 +800,18 @@
       document.getElementById("routeGroupsContainer").appendChild(box);
       const list = box.querySelector(".entries-list");
       if (Array.isArray(rowsArray) && rowsArray.length > 0) {
-        rowsArray.forEach(r => list.insertAdjacentHTML("beforeend", createEntryRowHTML(r)));
+        list.insertAdjacentHTML("beforeend", rowsArray.map(r => createEntryRowHTML(r)).join(""));
       } else {
         list.insertAdjacentHTML("beforeend", createEntryRowHTML());
       }
-      renderVoucher();
+      if (!skipRender) scheduleRender();
     }
 
     function addEntryToGroup(groupId) {
       const grp = document.querySelector(`.row-editor[data-group-id="${groupId}"] .entries-list`);
       if (grp) {
         grp.insertAdjacentHTML("beforeend", createEntryRowHTML());
-        renderVoucher();
+        scheduleRender();
       }
     }
 
@@ -808,7 +824,7 @@
       const lastGroup = groups[groups.length - 1];
       const list = lastGroup.querySelector(".entries-list");
       list.insertAdjacentHTML("beforeend", createEntryRowHTML());
-      renderVoucher();
+      scheduleRender();
     }
 
     function numVal(el) { return el ? (parseFloat(el.value) || 0) : 0; }
@@ -831,7 +847,7 @@
       document.getElementById("out_cheque_date").textContent = txtVal(document.getElementById("in_cheque_date"), "-");
 
       const tbody = document.getElementById("voucherTableBody");
-      tbody.innerHTML = "";
+      const fragment = document.createDocumentFragment();
 
       let grandAllDeduct = 0;
       let grandAllNetPayable = 0;
@@ -847,7 +863,7 @@
         const bannerTr = document.createElement("tr");
         bannerTr.className = "route-banner";
         bannerTr.innerHTML = `<td colspan="19">${labelText}</td>`;
-        tbody.appendChild(bannerTr);
+        fragment.appendChild(bannerTr);
 
         let sumCQty = 0, sumRQty = 0, sumFQty = 0;
         let sumFreight = 0, sumShortAmt = 0, sumBilty = 0;
@@ -914,7 +930,7 @@
             <td>${tarpaulin ? fmt2(tarpaulin) : ""}</td>
             <td><strong>${fmt2(netAmt)}</strong></td>
           `;
-          tbody.appendChild(tr);
+          fragment.appendChild(tr);
         });
 
         const totalDeductInGroup = sumShortAmt + sumBilty + sumAdv + sumPartyAdv + sumTrans + sumFuel + sumGps + sumTarpaulin;
@@ -941,8 +957,10 @@
           <td>${fmt2(sumTarpaulin)}</td>
           <td>${fmt2(sumNet)}</td>
         `;
-        tbody.appendChild(grandTr);
+        fragment.appendChild(grandTr);
       });
+
+      tbody.replaceChildren(fragment);
 
       latestTotals = { totalDeduct: grandAllDeduct, netPayable: grandAllNetPayable };
       document.getElementById("totalRowBadge").textContent = "Vehicles: " + totalVehicleRows;
@@ -982,8 +1000,10 @@
         });
       });
 
+      const activeId = getActiveVoucherId();
+
       return {
-        voucher_id: document.getElementById("in_voucher_id").value || null,
+        voucher_id: activeId,
         voucher_no: document.getElementById("in_voucher_no").value,
         voucher_date: document.getElementById("in_voucher_date").value,
         debited_to: document.getElementById("in_debited_to").value,
@@ -1000,6 +1020,23 @@
         net_payable: latestTotals.netPayable,
         routes: routes
       };
+    }
+
+    function syncHistoryRowPayload(voucherId, payloadObj, totalDeduct, netPayable) {
+      const rowEl = document.getElementById("voucher-row-" + voucherId);
+      if (!rowEl) return;
+      const serialized = JSON.stringify(payloadObj);
+      rowEl.querySelectorAll(".view-voucher-btn, .edit-voucher-btn").forEach(btn => {
+        btn.setAttribute("data-voucher-id", String(voucherId));
+        btn.setAttribute("data-payload", serialized);
+      });
+      const cells = rowEl.querySelectorAll("td");
+      if (cells.length >= 7) {
+        cells[1].textContent = payloadObj.voucher_date || "-";
+        cells[2].innerHTML = `<strong>${escAttr(payloadObj.voucher_no || "-")}</strong>`;
+        cells[5].textContent = "₹" + fmt2(totalDeduct);
+        cells[6].innerHTML = `<strong style="color:#15803d;">₹${fmt2(netPayable)}</strong>`;
+      }
     }
 
     async function saveVoucherOnly() {
@@ -1019,14 +1056,20 @@
         const result = await res.json();
         if (!res.ok || !result.ok) {
           alert(result.error || "Save failed");
-          updateSaveButtonLabels(document.getElementById("in_voucher_id").value);
+          updateSaveButtonLabels(getActiveVoucherId());
           [quickBtn, editorBtn, bottomBtn].forEach(b => { if (b) b.disabled = false; });
           return;
         }
+        const savedId = String(result.voucher_id);
+        document.getElementById("in_voucher_id").value = savedId;
+        document.getElementById("editingBadge").textContent = "Mode: Editing #" + savedId + " (Unlimited Edits)";
+        updateSaveButtonLabels(savedId);
+        payload.voucher_id = result.voucher_id;
+        syncHistoryRowPayload(savedId, payload, result.total_deduct, result.net_payable);
         window.location.href = "{{ url_for('payment_voucher_form', tab=view_tab, q=q, date_from=date_from, date_to=date_to) }}#voucherHistory";
       } catch (err) {
         alert("Network error while saving voucher.");
-        updateSaveButtonLabels(document.getElementById("in_voucher_id").value);
+        updateSaveButtonLabels(getActiveVoucherId());
         [quickBtn, editorBtn, bottomBtn].forEach(b => { if (b) b.disabled = false; });
       }
     }
@@ -1035,7 +1078,7 @@
       renderVoucher();
       const vNo = txtVal(document.getElementById("in_voucher_no"), "Auto/Blank");
       const vDate = txtVal(document.getElementById("in_voucher_date"), "-");
-      const vId = document.getElementById("in_voucher_id").value;
+      const vId = getActiveVoucherId();
       const modeText = vId ? `Update Voucher #${escAttr(vId)}` : "Save New Voucher";
       document.getElementById("saveModalSummary").innerHTML = `
         <strong>Action:</strong> ${modeText}<br>
@@ -1069,9 +1112,12 @@
           btn.textContent = "✓ Save & Print";
           return;
         }
-        document.getElementById("in_voucher_id").value = result.voucher_id;
-        document.getElementById("editingBadge").textContent = "Mode: Saved #" + result.voucher_id;
-        updateSaveButtonLabels(result.voucher_id);
+        const savedId = String(result.voucher_id);
+        document.getElementById("in_voucher_id").value = savedId;
+        document.getElementById("editingBadge").textContent = "Mode: Saved #" + savedId + " (Unlimited Edits)";
+        updateSaveButtonLabels(savedId);
+        payload.voucher_id = result.voucher_id;
+        syncHistoryRowPayload(savedId, payload, result.total_deduct, result.net_payable);
         closeSavePopup();
         btn.disabled = false;
         btn.textContent = "✓ Save & Print";
@@ -1095,10 +1141,11 @@
         data = rawPayload || {};
       }
 
-      document.getElementById("in_voucher_id").value = voucherId;
+      const cleanId = String(voucherId || "").trim();
+      document.getElementById("in_voucher_id").value = cleanId;
       document.getElementById("editingBadge").textContent =
-        (scrollToPreviewOnly ? "Mode: Viewing #" : "Mode: Editing #") + voucherId;
-      updateSaveButtonLabels(voucherId);
+        (scrollToPreviewOnly ? "Mode: Viewing #" : "Mode: Editing #") + cleanId;
+      updateSaveButtonLabels(cleanId);
 
       document.getElementById("in_voucher_no").value = data.voucher_no || "";
       document.getElementById("in_voucher_date").value = data.voucher_date || "";
@@ -1118,7 +1165,7 @@
       groupCounter = 0;
 
       const routes = Array.isArray(data.routes) && data.routes.length ? data.routes : [{ route: "", material: "", rows: [] }];
-      routes.forEach(grp => addRouteGroup(grp.route || "", grp.material || "", grp.rows || []));
+      routes.forEach(grp => addRouteGroup(grp.route || "", grp.material || "", grp.rows || [], true));
       renderVoucher();
 
       const target = scrollToPreviewOnly
@@ -1143,13 +1190,13 @@
 
     document.querySelectorAll(".view-voucher-btn").forEach(btn => {
       btn.addEventListener("click", () => {
-        loadVoucherIntoForm(btn.dataset.voucherId, btn.dataset.payload, true);
+        loadVoucherIntoForm(btn.getAttribute("data-voucher-id"), btn.getAttribute("data-payload"), true);
       });
     });
 
     document.querySelectorAll(".edit-voucher-btn").forEach(btn => {
       btn.addEventListener("click", () => {
-        loadVoucherIntoForm(btn.dataset.voucherId, btn.dataset.payload, false);
+        loadVoucherIntoForm(btn.getAttribute("data-voucher-id"), btn.getAttribute("data-payload"), false);
       });
     });
 
@@ -1158,7 +1205,7 @@
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
         lastHiddenAt = Date.now();
-      } else if (lastHiddenAt && (Date.now() - lastHiddenAt > 2000) && !document.getElementById("in_voucher_id").value) {
+      } else if (lastHiddenAt && (Date.now() - lastHiddenAt > 2000) && !getActiveVoucherId()) {
         window.location.reload();
       }
     });
