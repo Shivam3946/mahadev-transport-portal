@@ -402,8 +402,11 @@
     </div>
     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
       <button type="button" onclick="window.location.reload()" class="btn btn-outline btn-sm">🔄 Sync Latest</button>
+      <button type="button" id="quickSaveBtn" onclick="saveVoucherOnly()" class="btn btn-navy">
+        💾 Save Voucher
+      </button>
       <button type="button" onclick="openSavePopup()" class="btn btn-green">
-        💾 Save &amp; Print / PDF
+        🖨️ Save &amp; Print / PDF
       </button>
     </div>
   </div>
@@ -411,9 +414,14 @@
   <div class="editor-box">
     <div class="editor-head">
       <span>📝 Voucher Details (सभी फ़ील्ड व Party Advance / GPS Amount / Tarpaulin 100% Optional)</span>
-      <button type="button" onclick="addVehicleToLastGroup()" class="btn btn-green" style="padding: 5px 11px; font-size: 0.78rem;">
-        + Add Vehicle Row
-      </button>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button type="button" id="editorSaveBtn" onclick="saveVoucherOnly()" class="btn btn-navy" style="padding: 5px 11px; font-size: 0.78rem;">
+          💾 Save Voucher
+        </button>
+        <button type="button" onclick="addVehicleToLastGroup()" class="btn btn-green" style="padding: 5px 11px; font-size: 0.78rem;">
+          + Add Vehicle Row
+        </button>
+      </div>
     </div>
 
     <input type="hidden" id="in_voucher_id" value="" />
@@ -477,6 +485,9 @@
       </button>
       <button type="button" onclick="addRouteGroup()" class="btn btn-crimson">
         + Add Another Route Section
+      </button>
+      <button type="button" id="bottomSaveBtn" onclick="saveVoucherOnly()" class="btn btn-navy">
+        💾 Save / Update Voucher
       </button>
     </div>
   </div>
@@ -705,6 +716,16 @@
         .replace(/&/g, "&amp;")
         .replace(/"/g, "&quot;")
         .replace(/</g, "&lt;");
+    }
+
+    function updateSaveButtonLabels(voucherId) {
+      const label = voucherId ? `💾 Update Voucher #${voucherId}` : "💾 Save Voucher";
+      const quickBtn = document.getElementById("quickSaveBtn");
+      const editorBtn = document.getElementById("editorSaveBtn");
+      const bottomBtn = document.getElementById("bottomSaveBtn");
+      if (quickBtn) quickBtn.textContent = label;
+      if (editorBtn) editorBtn.textContent = label;
+      if (bottomBtn) bottomBtn.textContent = voucherId ? `💾 Save & Update Voucher #${voucherId}` : "💾 Save / Update Voucher";
     }
 
     function createEntryRowHTML(rowData = {}) {
@@ -981,6 +1002,35 @@
       };
     }
 
+    async function saveVoucherOnly() {
+      renderVoucher();
+      const quickBtn = document.getElementById("quickSaveBtn");
+      const editorBtn = document.getElementById("editorSaveBtn");
+      const bottomBtn = document.getElementById("bottomSaveBtn");
+      [quickBtn, editorBtn, bottomBtn].forEach(b => { if (b) { b.disabled = true; b.textContent = "Saving..."; } });
+
+      try {
+        const payload = collectVoucherPayload();
+        const res = await fetch("{{ url_for('save_payment_voucher') }}", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (!res.ok || !result.ok) {
+          alert(result.error || "Save failed");
+          updateSaveButtonLabels(document.getElementById("in_voucher_id").value);
+          [quickBtn, editorBtn, bottomBtn].forEach(b => { if (b) b.disabled = false; });
+          return;
+        }
+        window.location.href = "{{ url_for('payment_voucher_form', tab=view_tab, q=q, date_from=date_from, date_to=date_to) }}#voucherHistory";
+      } catch (err) {
+        alert("Network error while saving voucher.");
+        updateSaveButtonLabels(document.getElementById("in_voucher_id").value);
+        [quickBtn, editorBtn, bottomBtn].forEach(b => { if (b) b.disabled = false; });
+      }
+    }
+
     function openSavePopup() {
       renderVoucher();
       const vNo = txtVal(document.getElementById("in_voucher_no"), "Auto/Blank");
@@ -1021,13 +1071,14 @@
         }
         document.getElementById("in_voucher_id").value = result.voucher_id;
         document.getElementById("editingBadge").textContent = "Mode: Saved #" + result.voucher_id;
+        updateSaveButtonLabels(result.voucher_id);
         closeSavePopup();
         btn.disabled = false;
         btn.textContent = "✓ Save & Print";
 
         window.print();
         setTimeout(() => {
-          window.location.reload();
+          window.location.href = "{{ url_for('payment_voucher_form', tab=view_tab, q=q, date_from=date_from, date_to=date_to) }}#voucherHistory";
         }, 500);
       } catch (err) {
         alert("Network error while saving voucher.");
@@ -1047,6 +1098,7 @@
       document.getElementById("in_voucher_id").value = voucherId;
       document.getElementById("editingBadge").textContent =
         (scrollToPreviewOnly ? "Mode: Viewing #" : "Mode: Editing #") + voucherId;
+      updateSaveButtonLabels(voucherId);
 
       document.getElementById("in_voucher_no").value = data.voucher_no || "";
       document.getElementById("in_voucher_date").value = data.voucher_date || "";
@@ -1078,6 +1130,7 @@
     function startNewVoucher() {
       document.getElementById("in_voucher_id").value = "";
       document.getElementById("editingBadge").textContent = "Mode: New Voucher";
+      updateSaveButtonLabels("");
       document.querySelectorAll(".editor-box input").forEach(inp => {
         if (inp.id === "in_debited_to") inp.value = "MAHADEV TRANSPORT";
         else if (inp.id === "in_voucher_date") inp.value = "{{ today_str }}";
