@@ -245,10 +245,37 @@ def sync_dispatch_columns():
         db.session.commit()
 
 
+def sync_payment_voucher_columns():
+    """Safely add missing columns to payment_vouchers without dropping data."""
+    inspector = inspect(db.engine)
+    if not inspector.has_table("payment_vouchers"):
+        return
+
+    existing_cols = {col["name"] for col in inspector.get_columns("payment_vouchers")}
+    alter_statements = []
+
+    if "routes_summary" not in existing_cols:
+        alter_statements.append("ALTER TABLE payment_vouchers ADD COLUMN routes_summary TEXT DEFAULT ''")
+    if "vehicles_summary" not in existing_cols:
+        alter_statements.append("ALTER TABLE payment_vouchers ADD COLUMN vehicles_summary TEXT DEFAULT ''")
+    if "is_archived" not in existing_cols:
+        alter_statements.append("ALTER TABLE payment_vouchers ADD COLUMN is_archived BOOLEAN DEFAULT FALSE")
+    if "updated_at" not in existing_cols:
+        alter_statements.append("ALTER TABLE payment_vouchers ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    if "created_at" not in existing_cols:
+        alter_statements.append("ALTER TABLE payment_vouchers ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+
+    for stmt in alter_statements:
+        db.session.execute(text(stmt))
+    if alter_statements:
+        db.session.commit()
+
+
 def bootstrap_database():
     """Safely initialize tables and columns without ever dropping existing production data."""
     db.create_all()
     sync_dispatch_columns()
+    sync_payment_voucher_columns()
 
     if User.query.count() == 0:
         default_admin = User(
