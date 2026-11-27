@@ -14,7 +14,7 @@
     }
 
     .toolbar {
-      max-width: 1180px;
+      max-width: 1320px;
       margin: 0 auto 14px;
       background: #fff;
       border: 1px solid #cbd5e1;
@@ -44,7 +44,7 @@
     .btn-outline { background: #fff; color: #0f294a; border: 1px solid #0f294a; }
 
     .editor-box, .history-box {
-      max-width: 1180px;
+      max-width: 1320px;
       margin: 0 auto 16px;
       background: #fff;
       border: 1px solid #cbd5e1;
@@ -104,7 +104,7 @@
     }
     .entry-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
       gap: 7px;
       border-top: 1px dashed #cbd5e1;
       padding-top: 7px;
@@ -112,12 +112,12 @@
     }
 
     .voucher-sheet {
-      max-width: 1180px;
+      max-width: 1320px;
       margin: 0 auto 18px;
       background: #fff;
       border: 2.5px solid #0f294a;
       border-radius: 10px;
-      padding: 16px 20px;
+      padding: 16px 18px;
     }
 
     .top-brand-wrap {
@@ -137,8 +137,8 @@
       text-align: center;
     }
     .logo-img {
-      width: 62px;
-      height: 62px;
+      width: 60px;
+      height: 60px;
       object-fit: cover;
       border-radius: 10px;
       border: 2px solid #0f294a;
@@ -146,12 +146,11 @@
       flex-shrink: 0;
     }
     .company-name {
-      font-size: 1.85rem;
+      font-size: 1.8rem;
       font-weight: 900;
       letter-spacing: 0.6px;
       color: #0f294a;
       line-height: 1.15;
-      word-break: break-word;
     }
     .company-address {
       font-size: 0.82rem;
@@ -182,7 +181,7 @@
       background: #0f766e;
       color: #fff;
       font-weight: 900;
-      font-size: 0.92rem;
+      font-size: 0.9rem;
       letter-spacing: 1px;
       padding: 4px 22px;
       border-radius: 4px;
@@ -198,37 +197,40 @@
       flex-wrap: wrap;
       justify-content: space-between;
       gap: 10px;
-      padding: 8px 12px;
+      padding: 7px 12px;
       border-bottom: 1.5px solid #1e293b;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       font-weight: 800;
       background: #f8fafc;
     }
     table.v-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.72rem;
+      font-size: 0.66rem;
+      table-layout: fixed;
     }
     table.v-table th {
       background: #e2e8f0;
       color: #0f172a;
       border: 1px solid #475569;
-      padding: 5px 4px;
+      padding: 4px 2px;
       text-align: center;
       font-weight: 800;
+      word-wrap: break-word;
     }
     table.v-table td {
       border: 1px solid #64748b;
-      padding: 4px 5px;
+      padding: 4px 2px;
       text-align: center;
+      word-wrap: break-word;
     }
     .route-banner td {
       background: #e5e7eb !important;
       text-align: left !important;
       font-weight: 800;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       color: #0f172a;
-      padding: 5px 8px !important;
+      padding: 4px 8px !important;
     }
     .grand-row td {
       font-weight: 800;
@@ -241,14 +243,14 @@
       flex-wrap: wrap;
       justify-content: flex-end;
       gap: 24px;
-      padding: 9px 14px;
-      font-size: 0.88rem;
+      padding: 8px 14px;
+      font-size: 0.86rem;
       font-weight: 900;
       background: #fff;
     }
     .words-bank-strip {
       margin-top: 8px;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 700;
     }
     .bank-line {
@@ -257,15 +259,15 @@
       justify-content: space-between;
       gap: 12px;
       margin-top: 6px;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 700;
     }
     .sign-line {
       display: flex;
       justify-content: space-between;
       gap: 16px;
-      margin-top: 22px;
-      font-size: 0.8rem;
+      margin-top: 20px;
+      font-size: 0.78rem;
       font-weight: 900;
       color: #0f172a;
     }
@@ -344,34 +346,47 @@
       flex-wrap: wrap;
     }
 
+    @page {
+      size: A4 landscape;
+      margin: 6mm;
+    }
+
     @media print {
       .toolbar, .editor-box, .history-box, .modal-backdrop { display: none !important; }
       body { background: #fff; padding: 0; }
       .voucher-sheet {
-        border: 2px solid #0f294a;
+        border: 1.8px solid #0f294a;
         border-radius: 0;
         max-width: 100%;
-        padding: 10px 12px;
+        width: 100%;
+        padding: 6px 8px;
         margin: 0;
       }
       .top-brand-wrap {
         display: flex !important;
         align-items: flex-start !important;
         justify-content: space-between !important;
-        gap: 10px !important;
+        gap: 8px !important;
       }
-      .company-name { font-size: 1.45rem !important; font-weight: 900 !important; color: #0f294a !important; }
-      .company-address { font-size: 0.74rem !important; font-weight: 900 !important; color: #0f172a !important; }
-      .logo-img { width: 48px !important; height: 48px !important; }
+      .company-name { font-size: 1.25rem !important; font-weight: 900 !important; color: #0f294a !important; }
+      .company-address { font-size: 0.7rem !important; font-weight: 900 !important; color: #0f172a !important; }
+      .logo-img { width: 42px !important; height: 42px !important; }
       .mob-corner {
         position: static !important;
-        font-size: 0.74rem !important;
+        font-size: 0.68rem !important;
         font-weight: 900 !important;
         color: #0f172a !important;
         background: #fff !important;
-        border: 1.5px solid #0f294a !important;
-        padding: 4px 8px !important;
+        border: 1px solid #0f294a !important;
+        padding: 3px 6px !important;
       }
+      .meta-strip { padding: 4px 8px !important; font-size: 0.7rem !important; }
+      table.v-table { font-size: 0.54rem !important; width: 100% !important; table-layout: fixed !important; }
+      table.v-table th, table.v-table td { padding: 2px 1px !important; line-height: 1.15 !important; }
+      .route-banner td { font-size: 0.62rem !important; padding: 3px 6px !important; }
+      .summary-footer-box { padding: 5px 8px !important; font-size: 0.74rem !important; }
+      .words-bank-strip, .bank-line, .sign-line { font-size: 0.68rem !important; margin-top: 4px !important; }
+      .sign-line { margin-top: 12px !important; }
     }
   </style>
 </head>
@@ -386,6 +401,7 @@
       <span id="totalRowBadge" style="font-size: 0.8rem; font-weight: 800; color: #0f294a;">Vehicles: 1</span>
     </div>
     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <button type="button" onclick="window.location.reload()" class="btn btn-outline btn-sm">🔄 Sync Latest</button>
       <button type="button" onclick="openSavePopup()" class="btn btn-green">
         💾 Save &amp; Print / PDF
       </button>
@@ -394,7 +410,7 @@
 
   <div class="editor-box">
     <div class="editor-head">
-      <span>📝 Voucher Details (अंदर के सभी फ़ील्ड ऑप्शनल · Unlimited Vehicles)</span>
+      <span>📝 Voucher Details (सभी फ़ील्ड व Party Advance / GPS Amount / Tarpaulin 100% Optional)</span>
       <button type="button" onclick="addVehicleToLastGroup()" class="btn btn-green" style="padding: 5px 11px; font-size: 0.78rem;">
         + Add Vehicle Row
       </button>
@@ -480,6 +496,7 @@
         </div>
       </div>
 
+      <!-- Apne dono mobile numbers yahan daal dein -->
       <div class="mob-corner">
         <div><strong>Mob. No.: 8873257377</strong></div>
         <div><strong>Mob. No.: 8587835564</strong></div>
@@ -511,7 +528,7 @@
         </div>
       </div>
 
-      <div style="overflow-x: auto;">
+      <div>
         <table class="v-table">
           <thead>
             <tr>
@@ -520,7 +537,7 @@
               <th>Challan No.</th>
               <th>Vehicle No.</th>
               <th>Challan Qty</th>
-              <th>ReceiveQty</th>
+              <th>Receive Qty</th>
               <th>Freight Qty</th>
               <th>Rate</th>
               <th>Freight Amt</th>
@@ -528,8 +545,11 @@
               <th>Short Amt</th>
               <th>Bilty Exp</th>
               <th>Advance</th>
+              <th>Party Adv</th>
               <th>ByTransfer</th>
               <th>Fuel Amt</th>
+              <th>GPS Amt</th>
+              <th>Tarpaulin</th>
               <th>Net Amount</th>
             </tr>
           </thead>
@@ -625,12 +645,14 @@
             <td>₹{{ "{:,.2f}".format(v.total_deduct or 0) }}</td>
             <td><strong style="color:#15803d;">₹{{ "{:,.2f}".format(v.net_payable or 0) }}</strong></td>
             <td style="white-space: nowrap;">
-              <button type="button" class="btn btn-navy btn-sm"
-                      onclick='loadVoucherIntoForm({{ v.id }}, {{ v.payload_json|tojson }}, true)'>
+              <button type="button" class="btn btn-navy btn-sm view-voucher-btn"
+                      data-voucher-id="{{ v.id }}"
+                      data-payload="{{ v.payload_json|e }}">
                 👁️ View
               </button>
-              <button type="button" class="btn btn-green btn-sm"
-                      onclick='loadVoucherIntoForm({{ v.id }}, {{ v.payload_json|tojson }}, false)'>
+              <button type="button" class="btn btn-green btn-sm edit-voucher-btn"
+                      data-voucher-id="{{ v.id }}"
+                      data-payload="{{ v.payload_json|e }}">
                 ✏️ Edit
               </button>
               <form method="POST" action="{{ url_for('toggle_archive_payment_voucher', voucher_id=v.id) }}" style="display:inline;">
@@ -676,33 +698,40 @@
 
   <script>
     let groupCounter = 0;
+    let latestTotals = { totalDeduct: 0, netPayable: 0 };
+
+    function escAttr(s) {
+      return String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;");
+    }
 
     function createEntryRowHTML(rowData = {}) {
       return `
         <div class="entry-grid">
-          <div><label>SrNo</label><input type="text" class="f-sr" value="${escAttr(rowData.sr || "")}" placeholder="Auto" oninput="renderVoucher()" /></div>
-          <div><label>Challan Date</label><input type="date" class="f-cdate" value="${escAttr(rowData.cdate || "")}" oninput="renderVoucher()" /></div>
-          <div><label>Challan No.</label><input type="text" class="f-cno" value="${escAttr(rowData.cno || "")}" placeholder="Optional" oninput="renderVoucher()" /></div>
-          <div><label>Vehicle No.</label><input type="text" class="f-veh" value="${escAttr(rowData.veh || "")}" placeholder="Optional" oninput="renderVoucher()" /></div>
-          <div><label>Challan Qty</label><input type="number" step="0.001" class="f-cqty" value="${escAttr(rowData.cqty || "")}" placeholder="0" oninput="renderVoucher()" /></div>
-          <div><label>ReceiveQty</label><input type="number" step="0.001" class="f-rqty" value="${escAttr(rowData.rqty || "")}" placeholder="0" oninput="renderVoucher()" /></div>
-          <div><label>Freight Qty</label><input type="number" step="0.001" class="f-fqty" value="${escAttr(rowData.fqty || "")}" placeholder="Optional" oninput="renderVoucher()" /></div>
-          <div><label>Rate</label><input type="number" step="0.01" class="f-rate" value="${escAttr(rowData.rate || "")}" placeholder="0" oninput="renderVoucher()" /></div>
-          <div><label>Short</label><input type="number" step="0.001" class="f-short" value="${escAttr(rowData.short || "")}" placeholder="0" oninput="renderVoucher()" /></div>
-          <div><label>Short Amt</label><input type="number" step="0.01" class="f-samt" value="${escAttr(rowData.samt || "")}" placeholder="0" oninput="renderVoucher()" /></div>
-          <div><label>Bilty Exp</label><input type="number" step="0.01" class="f-bilty" value="${escAttr(rowData.bilty || "")}" placeholder="0" oninput="renderVoucher()" /></div>
-          <div><label>Advance</label><input type="number" step="0.01" class="f-adv" value="${escAttr(rowData.adv || "")}" placeholder="0" oninput="renderVoucher()" /></div>
-          <div><label>ByTransfer</label><input type="number" step="0.01" class="f-trans" value="${escAttr(rowData.trans || "")}" placeholder="0" oninput="renderVoucher()" /></div>
-          <div><label>Fuel Amt</label><input type="number" step="0.01" class="f-fuel" value="${escAttr(rowData.fuel || "")}" placeholder="0" oninput="renderVoucher()" /></div>
+          <div><label>SrNo (Opt)</label><input type="text" class="f-sr" value="${escAttr(rowData.sr || "")}" placeholder="Auto" oninput="renderVoucher()" /></div>
+          <div><label>Challan Date (Opt)</label><input type="date" class="f-cdate" value="${escAttr(rowData.cdate || "")}" oninput="renderVoucher()" /></div>
+          <div><label>Challan No. (Opt)</label><input type="text" class="f-cno" value="${escAttr(rowData.cno || "")}" placeholder="Optional" oninput="renderVoucher()" /></div>
+          <div><label>Vehicle No. (Opt)</label><input type="text" class="f-veh" value="${escAttr(rowData.veh || "")}" placeholder="Optional" oninput="renderVoucher()" /></div>
+          <div><label>Challan Qty (Opt)</label><input type="number" step="0.001" class="f-cqty" value="${escAttr(rowData.cqty || "")}" placeholder="0" oninput="renderVoucher()" /></div>
+          <div><label>Receive Qty (Opt)</label><input type="number" step="0.001" class="f-rqty" value="${escAttr(rowData.rqty || "")}" placeholder="0" oninput="renderVoucher()" /></div>
+          <div><label>Freight Qty (Opt)</label><input type="number" step="0.001" class="f-fqty" value="${escAttr(rowData.fqty || "")}" placeholder="Optional" oninput="renderVoucher()" /></div>
+          <div><label>Rate (Opt)</label><input type="number" step="0.01" class="f-rate" value="${escAttr(rowData.rate || "")}" placeholder="0" oninput="renderVoucher()" /></div>
+          <div><label>Short (Opt)</label><input type="number" step="0.001" class="f-short" value="${escAttr(rowData.short || "")}" placeholder="0" oninput="renderVoucher()" /></div>
+          <div><label>Short Amt (Opt)</label><input type="number" step="0.01" class="f-samt" value="${escAttr(rowData.samt || "")}" placeholder="0" oninput="renderVoucher()" /></div>
+          <div><label>Bilty Exp (Opt)</label><input type="number" step="0.01" class="f-bilty" value="${escAttr(rowData.bilty || "")}" placeholder="0" oninput="renderVoucher()" /></div>
+          <div><label>Advance (Opt)</label><input type="number" step="0.01" class="f-adv" value="${escAttr(rowData.adv || "")}" placeholder="0" oninput="renderVoucher()" /></div>
+          <div><label>Party Adv (Opt)</label><input type="number" step="0.01" class="f-party-adv" value="${escAttr(rowData.party_adv || "")}" placeholder="0" oninput="renderVoucher()" /></div>
+          <div><label>ByTransfer (Opt)</label><input type="number" step="0.01" class="f-trans" value="${escAttr(rowData.trans || "")}" placeholder="0" oninput="renderVoucher()" /></div>
+          <div><label>Fuel Amt (Opt)</label><input type="number" step="0.01" class="f-fuel" value="${escAttr(rowData.fuel || "")}" placeholder="0" oninput="renderVoucher()" /></div>
+          <div><label>GPS Amt (Opt)</label><input type="number" step="0.01" class="f-gps" value="${escAttr(rowData.gps_amt || "")}" placeholder="0" oninput="renderVoucher()" /></div>
+          <div><label>Tarpaulin (Opt)</label><input type="number" step="0.01" class="f-tarpaulin" value="${escAttr(rowData.tarpaulin || "")}" placeholder="0" oninput="renderVoucher()" /></div>
           <div style="display:flex; align-items:end;">
             <button type="button" class="btn btn-outline" style="padding:5px 8px; font-size:0.74rem;" onclick="this.closest('.entry-grid').remove(); renderVoucher();">✕ Row</button>
           </div>
         </div>
       `;
-    }
-
-    function escAttr(s) {
-      return String(s ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
     }
 
     function addRouteGroup(defaultRoute = "", defaultMaterial = "", rowsArray = null) {
@@ -766,8 +795,6 @@
     function fmt2(n) { return (Number(n) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
     function fmt3(n) { return (Number(n) || 0).toFixed(3); }
 
-    let latestTotals = { totalDeduct: 0, netPayable: 0 };
-
     function renderVoucher() {
       document.getElementById("out_voucher_no").textContent = txtVal(document.getElementById("in_voucher_no"), "-");
       document.getElementById("out_voucher_date").textContent = txtVal(document.getElementById("in_voucher_date"), "-");
@@ -798,12 +825,12 @@
 
         const bannerTr = document.createElement("tr");
         bannerTr.className = "route-banner";
-        bannerTr.innerHTML = `<td colspan="16">${labelText}</td>`;
+        bannerTr.innerHTML = `<td colspan="19">${labelText}</td>`;
         tbody.appendChild(bannerTr);
 
         let sumCQty = 0, sumRQty = 0, sumFQty = 0;
         let sumFreight = 0, sumShortAmt = 0, sumBilty = 0;
-        let sumAdv = 0, sumTrans = 0, sumFuel = 0, sumNet = 0;
+        let sumAdv = 0, sumPartyAdv = 0, sumTrans = 0, sumFuel = 0, sumGps = 0, sumTarpaulin = 0, sumNet = 0;
 
         grp.querySelectorAll(".entry-grid").forEach((row, idx) => {
           totalVehicleRows += 1;
@@ -820,11 +847,14 @@
           const samVal = numVal(row.querySelector(".f-samt"));
           const bilty = numVal(row.querySelector(".f-bilty"));
           const adv = numVal(row.querySelector(".f-adv"));
+          const partyAdv = numVal(row.querySelector(".f-party-adv"));
           const trans = numVal(row.querySelector(".f-trans"));
           const fuel = numVal(row.querySelector(".f-fuel"));
+          const gpsAmt = numVal(row.querySelector(".f-gps"));
+          const tarpaulin = numVal(row.querySelector(".f-tarpaulin"));
 
           const freightAmt = fqty * rate;
-          const rowDeduct = samVal + bilty + adv + trans + fuel;
+          const rowDeduct = samVal + bilty + adv + partyAdv + trans + fuel + gpsAmt + tarpaulin;
           const netAmt = freightAmt - rowDeduct;
 
           sumCQty += cqty;
@@ -834,8 +864,11 @@
           sumShortAmt += samVal;
           sumBilty += bilty;
           sumAdv += adv;
+          sumPartyAdv += partyAdv;
           sumTrans += trans;
           sumFuel += fuel;
+          sumGps += gpsAmt;
+          sumTarpaulin += tarpaulin;
           sumNet += netAmt;
 
           const tr = document.createElement("tr");
@@ -853,21 +886,24 @@
             <td>${samVal ? fmt2(samVal) : ""}</td>
             <td>${bilty ? fmt2(bilty) : ""}</td>
             <td>${adv ? fmt2(adv) : ""}</td>
+            <td>${partyAdv ? fmt2(partyAdv) : ""}</td>
             <td>${trans ? fmt2(trans) : ""}</td>
             <td>${fuel ? fmt2(fuel) : ""}</td>
+            <td>${gpsAmt ? fmt2(gpsAmt) : ""}</td>
+            <td>${tarpaulin ? fmt2(tarpaulin) : ""}</td>
             <td><strong>${fmt2(netAmt)}</strong></td>
           `;
           tbody.appendChild(tr);
         });
 
-        const totalDeductInGroup = sumShortAmt + sumBilty + sumAdv + sumTrans + sumFuel;
+        const totalDeductInGroup = sumShortAmt + sumBilty + sumAdv + sumPartyAdv + sumTrans + sumFuel + sumGps + sumTarpaulin;
         grandAllDeduct += totalDeductInGroup;
         grandAllNetPayable += sumNet;
 
         const grandTr = document.createElement("tr");
         grandTr.className = "grand-row";
         grandTr.innerHTML = `
-          <td colspan="4" style="text-align:right; padding-right:10px;">Grand Total :</td>
+          <td colspan="4" style="text-align:right; padding-right:8px;">Grand Total :</td>
           <td>${fmt3(sumCQty)}</td>
           <td>${fmt3(sumRQty)}</td>
           <td>${fmt3(sumFQty)}</td>
@@ -877,8 +913,11 @@
           <td>${fmt2(sumShortAmt)}</td>
           <td>${fmt2(sumBilty)}</td>
           <td>${fmt2(sumAdv)}</td>
+          <td>${fmt2(sumPartyAdv)}</td>
           <td>${fmt2(sumTrans)}</td>
           <td>${fmt2(sumFuel)}</td>
+          <td>${fmt2(sumGps)}</td>
+          <td>${fmt2(sumTarpaulin)}</td>
           <td>${fmt2(sumNet)}</td>
         `;
         tbody.appendChild(grandTr);
@@ -908,8 +947,11 @@
             samt: row.querySelector(".f-samt").value,
             bilty: row.querySelector(".f-bilty").value,
             adv: row.querySelector(".f-adv").value,
+            party_adv: row.querySelector(".f-party-adv").value,
             trans: row.querySelector(".f-trans").value,
             fuel: row.querySelector(".f-fuel").value,
+            gps_amt: row.querySelector(".f-gps").value,
+            tarpaulin: row.querySelector(".f-tarpaulin").value,
           });
         });
         routes.push({
@@ -943,7 +985,10 @@
       renderVoucher();
       const vNo = txtVal(document.getElementById("in_voucher_no"), "Auto/Blank");
       const vDate = txtVal(document.getElementById("in_voucher_date"), "-");
+      const vId = document.getElementById("in_voucher_id").value;
+      const modeText = vId ? `Update Voucher #${escAttr(vId)}` : "Save New Voucher";
       document.getElementById("saveModalSummary").innerHTML = `
+        <strong>Action:</strong> ${modeText}<br>
         <strong>Voucher No.:</strong> ${escAttr(vNo)} &nbsp;|&nbsp; <strong>Date:</strong> ${escAttr(vDate)}<br>
         <strong>Total Deduct:</strong> ₹${fmt2(latestTotals.totalDeduct)}<br>
         <strong>Net Payable:</strong> ₹${fmt2(latestTotals.netPayable)}<br><br>
@@ -964,7 +1009,7 @@
         const payload = collectVoucherPayload();
         const res = await fetch("{{ url_for('save_payment_voucher') }}", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
           body: JSON.stringify(payload)
         });
         const result = await res.json();
@@ -983,7 +1028,7 @@
         window.print();
         setTimeout(() => {
           window.location.reload();
-        }, 400);
+        }, 500);
       } catch (err) {
         alert("Network error while saving voucher.");
         btn.disabled = false;
@@ -991,7 +1036,14 @@
       }
     }
 
-    function loadVoucherIntoForm(voucherId, data, scrollToPreviewOnly = false) {
+    function loadVoucherIntoForm(voucherId, rawPayload, scrollToPreviewOnly = false) {
+      let data = {};
+      if (typeof rawPayload === "string") {
+        try { data = JSON.parse(rawPayload || "{}"); } catch (e) { data = {}; }
+      } else {
+        data = rawPayload || {};
+      }
+
       document.getElementById("in_voucher_id").value = voucherId;
       document.getElementById("editingBadge").textContent =
         (scrollToPreviewOnly ? "Mode: Viewing #" : "Mode: Editing #") + voucherId;
@@ -1035,6 +1087,28 @@
       groupCounter = 0;
       addRouteGroup();
     }
+
+    document.querySelectorAll(".view-voucher-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        loadVoucherIntoForm(btn.dataset.voucherId, btn.dataset.payload, true);
+      });
+    });
+
+    document.querySelectorAll(".edit-voucher-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        loadVoucherIntoForm(btn.dataset.voucherId, btn.dataset.payload, false);
+      });
+    });
+
+    // Multi-device / 3+ systems live sync when switching back to tab/window
+    let lastHiddenAt = 0;
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        lastHiddenAt = Date.now();
+      } else if (lastHiddenAt && (Date.now() - lastHiddenAt > 2000) && !document.getElementById("in_voucher_id").value) {
+        window.location.reload();
+      }
+    });
 
     addRouteGroup();
   </script>
