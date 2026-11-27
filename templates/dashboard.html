@@ -94,6 +94,23 @@
   .btn-danger-perm:hover {
     background: #7f1d1d;
   }
+  .quick-sections-bar {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .quick-sections-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 </style>
 {% endblock %}
 
@@ -112,7 +129,9 @@
     </a>
   </div>
   <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-    <a href="#password-settings" class="btn btn-outline">🔑 Set / Change Password</a>
+    <button type="button" class="btn btn-outline" onclick="openHomeSection('secPasswordChanger')">
+      🔑 Set / Change Password
+    </button>
     <a href="{{ url_for('logout') }}" class="btn btn-primary">🚪 Logout</a>
   </div>
 </div>
@@ -148,8 +167,8 @@
 <!-- AUTOMATED CHALLAN / DISPATCH ENTRY FORM (ALL FIELDS OPTIONAL) -->
 <div class="card">
   <div class="card-header">
-    <span>➕ नया चालान व डिस्पैच जोड़ें / Add Automated Challan & Dispatch</span>
-    <span style="font-size: 0.8rem; color: var(--success);">✓ All Fields Optional · Auto Sr. No. & Auto Calculation</span>
+    <span>➕ नया चालान व डिस्पैच जोड़ें / Add Automated Challan &amp; Dispatch</span>
+    <span style="font-size: 0.8rem; color: var(--success);">✓ All Fields Optional · Auto Sr. No. &amp; Auto Calculation</span>
   </div>
   <form method="POST" action="{{ url_for('add_dispatch') }}">
     <div class="form-grid">
@@ -251,218 +270,242 @@
       <div>Auto Freight (कुल भाड़ा): <strong id="calcFreight">₹0.00</strong></div>
       <div>Auto Deductions (कुल कटौती): <strong id="calcDeduction">₹0.00</strong></div>
       <div>Auto Net Balance (शेष राशि): <strong id="calcBalance" style="color: var(--crimson);">₹0.00</strong></div>
-      <button type="submit" class="btn btn-primary">💾 Save & Create Bill (सेव करें)</button>
+      <button type="submit" class="btn btn-primary">💾 Save &amp; Create Bill (सेव करें)</button>
     </div>
   </form>
 </div>
 
-<!-- SEARCH & RECORDS TABLE -->
-<div class="card">
-  <div class="card-header">
-    <span>📁 डिस्पैच व बिल रिकॉर्ड / Saved Dispatch & Billing Records</span>
-    <form method="GET" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
-      <input type="text" name="q" value="{{ q }}" placeholder="Search vehicle, challan, driver, party, route..." style="width: 220px;" />
-      <select name="status" style="width: 145px;">
-        <option value="" {% if not status_filter %}selected{% endif %}>All Status</option>
-        <option value="Pending" {% if status_filter == 'Pending' %}selected{% endif %}>Pending</option>
-        <option value="Partial" {% if status_filter == 'Partial' %}selected{% endif %}>Partial</option>
-        <option value="Settled" {% if status_filter == 'Settled' %}selected{% endif %}>Settled</option>
-      </select>
-      <input type="date" name="date" value="{{ date_filter }}" style="width: 155px;" />
-      <button type="submit" class="btn btn-navy btn-sm">🔍 Search</button>
-      <a href="{{ url_for('dashboard') }}" class="btn btn-outline btn-sm">Reset</a>
+<!-- ON-DEMAND SECTION LAUNCHER BAR -->
+<div class="quick-sections-bar">
+  <strong style="color: var(--navy); font-size: 0.92rem;">
+    🧭 अन्य सेक्शन खोलें / बंद करें (क्लिक करने पर खुलेंगे):
+  </strong>
+  <div class="quick-sections-btns">
+    <button type="button" class="btn btn-navy btn-sm" onclick="toggleHomeSection('secSavedDispatch')">
+      📁 Saved Dispatch &amp; Billing Records
+    </button>
+    <button type="button" class="btn btn-outline btn-sm" onclick="toggleHomeSection('secCustomRegister')">
+      🗂️ Custom Register Builder
+    </button>
+    <button type="button" class="btn btn-outline btn-sm" onclick="toggleHomeSection('secPasswordChanger')">
+      🔑 Set or Change Account Password
+    </button>
+  </div>
+</div>
+
+<!-- 1. SEARCH & RECORDS TABLE (HIDDEN BY DEFAULT UNTIL CLICKED) -->
+<div id="secSavedDispatch" style="display: none;">
+  <div class="card">
+    <div class="card-header">
+      <span>📁 डिस्पैच व बिल रिकॉर्ड / Saved Dispatch &amp; Billing Records</span>
+      <form method="GET" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search vehicle, challan, driver, party, route..." style="width: 220px;" />
+        <select name="status" style="width: 145px;">
+          <option value="" {% if not status_filter %}selected{% endif %}>All Status</option>
+          <option value="Pending" {% if status_filter == 'Pending' %}selected{% endif %}>Pending</option>
+          <option value="Partial" {% if status_filter == 'Partial' %}selected{% endif %}>Partial</option>
+          <option value="Settled" {% if status_filter == 'Settled' %}selected{% endif %}>Settled</option>
+        </select>
+        <input type="date" name="date" value="{{ date_filter }}" style="width: 155px;" />
+        <button type="submit" class="btn btn-navy btn-sm">🔍 Search</button>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline btn-sm">Reset</a>
+      </form>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Sr.</th>
+            <th>Date</th>
+            <th>Challan</th>
+            <th>Vehicle No.</th>
+            <th>Party / Driver</th>
+            <th>From → To</th>
+            <th>Qty × Rate</th>
+            <th>Freight (₹)</th>
+            <th>Deduction (₹)</th>
+            <th>Balance (₹)</th>
+            <th>Party Payment</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in entries %}
+          {% set st = e.payment_status or 'Pending' %}
+          <tr>
+            <td><strong>{{ e.sr_no }}</strong></td>
+            <td>{{ e.dispatch_date or '-' }}</td>
+            <td>{{ e.challan_no or '-' }}</td>
+            <td><strong>{{ e.vehicle_no or '-' }}</strong></td>
+            <td>
+              {% if e.party_name %}<strong>{{ e.party_name }}</strong><br>{% endif %}
+              {{ e.driver_name or '-' }}{% if e.driver_mobile %}<br><small>{{ e.driver_mobile }}</small>{% endif %}
+            </td>
+            <td>{{ e.from_location or '-' }} → {{ e.to_location or '-' }}</td>
+            <td>{{ e.qty or 0 }} × ₹{{ e.rate or 0 }}</td>
+            <td><strong>₹{{ "{:,.2f}".format(e.freight_amount or 0) }}</strong></td>
+            <td>₹{{ "{:,.2f}".format(e.total_deduction or 0) }}</td>
+            <td><strong style="color: var(--crimson);">₹{{ "{:,.2f}".format(e.balance or 0) }}</strong></td>
+            <td>
+              <span class="status-badge {% if st == 'Settled' %}status-settled{% elif st == 'Partial' %}status-partial{% else %}status-pending{% endif %}">
+                {{ st }}
+              </span>
+              <br><small>Recd: ₹{{ "{:,.2f}".format(e.received_amount or 0) }}</small>
+              <form method="POST" action="{{ url_for('update_dispatch_payment', entry_id=e.id) }}" class="pay-inline-form">
+                <input type="number" step="0.01" name="received_amount" value="{{ e.received_amount or 0 }}" title="Received ₹" />
+                <select name="payment_status" title="Payment Status">
+                  <option value="Pending" {% if st == 'Pending' %}selected{% endif %}>Pending</option>
+                  <option value="Partial" {% if st == 'Partial' %}selected{% endif %}>Partial</option>
+                  <option value="Settled" {% if st == 'Settled' %}selected{% endif %}>Settled</option>
+                </select>
+                <button type="submit" class="btn btn-success btn-sm" style="padding: 3px 7px;">✓</button>
+              </form>
+            </td>
+            <td style="white-space: nowrap;">
+              <a href="{{ url_for('print_challan', entry_id=e.id) }}" target="_blank" class="btn btn-success btn-sm">🧾 Challan</a>
+              <a href="{{ url_for('edit_dispatch', entry_id=e.id) }}" class="btn btn-outline btn-sm">✏️ Edit</a>
+              <form method="POST" action="{{ url_for('toggle_archive_dispatch', entry_id=e.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Archive this record? Data remains safely stored.');">📦</button>
+              </form>
+              <form method="POST" action="{{ url_for('delete_dispatch', entry_id=e.id) }}" style="display:inline;"
+                    onsubmit="return confirm('⚠️ PERMANENT DELETE: Kya aap Challan #{{ e.challan_no or e.sr_no }} (Vehicle: {{ e.vehicle_no or 'N/A' }}, Balance: ₹{{ '%.2f'|format(e.balance or 0) }}) ko hamesha ke liye delete karna chahte hain? Yeh wapas nahi aayega.');">
+                <button type="submit" class="btn btn-danger-perm btn-sm">🗑️ Del</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="12" style="text-align:center; padding: 18px; color: var(--muted);">
+              अभी कोई रिकॉर्ड नहीं है। ऊपर दिए गए फॉर्म से पहला चालान जोड़ें / No records yet. Add your first challan above!
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 2. CUSTOM REGISTER (HIDDEN BY DEFAULT UNTIL CLICKED) -->
+<div id="secCustomRegister" style="display: none;">
+  <div class="card" id="custom-register">
+    <div class="card-header">
+      <span>🗂️ कस्टम रजिस्टर (कॉलम जोड़ें या हटाएं) / Custom Register Builder</span>
+      <span style="font-size: 0.8rem; color: var(--muted);">Add or delete your own register columns anytime</span>
+    </div>
+
+    <!-- Add Column Form -->
+    <form method="POST" action="{{ url_for('add_custom_column') }}" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; align-items: end;">
+      <div style="flex: 1; min-width: 180px;">
+        <label>New Column Name (English)</label>
+        <input type="text" name="name_en" placeholder="e.g. Toll Tax / Party Name" required />
+      </div>
+      <div style="flex: 1; min-width: 180px;">
+        <label>कॉलम का नाम (हिंदी - Optional)</label>
+        <input type="text" name="name_hi" placeholder="उदा. टोल टैक्स / पार्टी नाम" />
+      </div>
+      <div style="width: 140px;">
+        <label>Field Type</label>
+        <select name="col_type">
+          <option value="text">Text</option>
+          <option value="number">Number / ₹</option>
+          <option value="date">Date</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-navy">+ Add Column</button>
     </form>
-  </div>
 
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Sr.</th>
-          <th>Date</th>
-          <th>Challan</th>
-          <th>Vehicle No.</th>
-          <th>Party / Driver</th>
-          <th>From → To</th>
-          <th>Qty × Rate</th>
-          <th>Freight (₹)</th>
-          <th>Deduction (₹)</th>
-          <th>Balance (₹)</th>
-          <th>Party Payment</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for e in entries %}
-        {% set st = e.payment_status or 'Pending' %}
-        <tr>
-          <td><strong>{{ e.sr_no }}</strong></td>
-          <td>{{ e.dispatch_date or '-' }}</td>
-          <td>{{ e.challan_no or '-' }}</td>
-          <td><strong>{{ e.vehicle_no or '-' }}</strong></td>
-          <td>
-            {% if e.party_name %}<strong>{{ e.party_name }}</strong><br>{% endif %}
-            {{ e.driver_name or '-' }}{% if e.driver_mobile %}<br><small>{{ e.driver_mobile }}</small>{% endif %}
-          </td>
-          <td>{{ e.from_location or '-' }} → {{ e.to_location or '-' }}</td>
-          <td>{{ e.qty or 0 }} × ₹{{ e.rate or 0 }}</td>
-          <td><strong>₹{{ "{:,.2f}".format(e.freight_amount or 0) }}</strong></td>
-          <td>₹{{ "{:,.2f}".format(e.total_deduction or 0) }}</td>
-          <td><strong style="color: var(--crimson);">₹{{ "{:,.2f}".format(e.balance or 0) }}</strong></td>
-          <td>
-            <span class="status-badge {% if st == 'Settled' %}status-settled{% elif st == 'Partial' %}status-partial{% else %}status-pending{% endif %}">
-              {{ st }}
-            </span>
-            <br><small>Recd: ₹{{ "{:,.2f}".format(e.received_amount or 0) }}</small>
-            <form method="POST" action="{{ url_for('update_dispatch_payment', entry_id=e.id) }}" class="pay-inline-form">
-              <input type="number" step="0.01" name="received_amount" value="{{ e.received_amount or 0 }}" title="Received ₹" />
-              <select name="payment_status" title="Payment Status">
-                <option value="Pending" {% if st == 'Pending' %}selected{% endif %}>Pending</option>
-                <option value="Partial" {% if st == 'Partial' %}selected{% endif %}>Partial</option>
-                <option value="Settled" {% if st == 'Settled' %}selected{% endif %}>Settled</option>
-              </select>
-              <button type="submit" class="btn btn-success btn-sm" style="padding: 3px 7px;">✓</button>
-            </form>
-          </td>
-          <td style="white-space: nowrap;">
-            <a href="{{ url_for('print_challan', entry_id=e.id) }}" target="_blank" class="btn btn-success btn-sm">🧾 Challan</a>
-            <a href="{{ url_for('edit_dispatch', entry_id=e.id) }}" class="btn btn-outline btn-sm">✏️ Edit</a>
-            <form method="POST" action="{{ url_for('toggle_archive_dispatch', entry_id=e.id) }}" style="display:inline;">
-              <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Archive this record? Data remains safely stored.');">📦</button>
-            </form>
-            <form method="POST" action="{{ url_for('delete_dispatch', entry_id=e.id) }}" style="display:inline;"
-                  onsubmit="return confirm('⚠️ PERMANENT DELETE: Kya aap Challan #{{ e.challan_no or e.sr_no }} (Vehicle: {{ e.vehicle_no or 'N/A' }}, Balance: ₹{{ '%.2f'|format(e.balance or 0) }}) ko hamesha ke liye delete karna chahte hain? Yeh wapas nahi aayega.');">
-              <button type="submit" class="btn btn-danger-perm btn-sm">🗑️ Del</button>
-            </form>
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="12" style="text-align:center; padding: 18px; color: var(--muted);">
-            अभी कोई रिकॉर्ड नहीं है। ऊपर दिए गए फॉर्म से पहला चालान जोड़ें / No records yet. Add your first challan above!
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- CUSTOM REGISTER (DYNAMIC ADD / DELETE COLUMNS) -->
-<div class="card" id="custom-register">
-  <div class="card-header">
-    <span>🗂️ कस्टम रजिस्टर (कॉलम जोड़ें या हटाएं) / Custom Register Builder</span>
-    <span style="font-size: 0.8rem; color: var(--muted);">Add or delete your own register columns anytime</span>
-  </div>
-
-  <!-- Add Column Form -->
-  <form method="POST" action="{{ url_for('add_custom_column') }}" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; align-items: end;">
-    <div style="flex: 1; min-width: 180px;">
-      <label>New Column Name (English)</label>
-      <input type="text" name="name_en" placeholder="e.g. Toll Tax / Party Name" required />
-    </div>
-    <div style="flex: 1; min-width: 180px;">
-      <label>कॉलम का नाम (हिंदी - Optional)</label>
-      <input type="text" name="name_hi" placeholder="उदा. टोल टैक्स / पार्टी नाम" />
-    </div>
-    <div style="width: 140px;">
-      <label>Field Type</label>
-      <select name="col_type">
-        <option value="text">Text</option>
-        <option value="number">Number / ₹</option>
-        <option value="date">Date</option>
-      </select>
-    </div>
-    <button type="submit" class="btn btn-navy">+ Add Column</button>
-  </form>
-
-  <!-- Active Columns Pills with Delete Option -->
-  <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;">
-    {% for col in custom_cols %}
-      <div style="background: #f8fafc; border: 1px solid #94a3b8; border-radius: 999px; padding: 4px 12px; display: flex; align-items: center; gap: 8px; font-size: 0.82rem;">
-        <span><strong>{{ col.name_en }}</strong> {% if col.name_hi %}({{ col.name_hi }}){% endif %}</span>
-        <form method="POST" action="{{ url_for('delete_custom_column', col_id=col.id) }}" style="display:inline;">
-          <button type="submit" style="background:none; border:none; color:var(--crimson); font-weight:900; cursor:pointer;" title="Delete Column" onclick="return confirm('Delete column {{ col.name_en }}?');">✕</button>
-        </form>
-      </div>
-    {% endfor %}
-  </div>
-
-  <!-- Add Custom Row Form -->
-  {% if custom_cols %}
-  <form method="POST" action="{{ url_for('add_custom_row') }}" style="margin-bottom: 14px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1;">
-    <div class="form-grid">
-      <div>
-        <label>Date / दिनांक</label>
-        <input type="date" name="row_date" value="{{ today_str }}" />
-      </div>
+    <!-- Active Columns Pills with Delete Option -->
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;">
       {% for col in custom_cols %}
-      <div>
-        <label>{{ col.name_en }} {% if col.name_hi %}/ {{ col.name_hi }}{% endif %}</label>
-        <input type="{{ col.col_type }}" step="any" name="col_{{ col.id }}" />
-      </div>
+        <div style="background: #f8fafc; border: 1px solid #94a3b8; border-radius: 999px; padding: 4px 12px; display: flex; align-items: center; gap: 8px; font-size: 0.82rem;">
+          <span><strong>{{ col.name_en }}</strong> {% if col.name_hi %}({{ col.name_hi }}){% endif %}</span>
+          <form method="POST" action="{{ url_for('delete_custom_column', col_id=col.id) }}" style="display:inline;">
+            <button type="submit" style="background:none; border:none; color:var(--crimson); font-weight:900; cursor:pointer;" title="Delete Column" onclick="return confirm('Delete column {{ col.name_en }}?');">✕</button>
+          </form>
+        </div>
       {% endfor %}
     </div>
-    <div style="margin-top: 10px;">
-      <button type="submit" class="btn btn-success btn-sm">+ Save Custom Row (एंट्री जोड़ें)</button>
-    </div>
-  </form>
-  {% endif %}
 
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th>
-          {% for col in custom_cols %}
-            <th>{{ col.name_en }}{% if col.name_hi %}<br><small>{{ col.name_hi }}</small>{% endif %}</th>
-          {% endfor %}
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in custom_rows %}
-        <tr>
-          <td>{{ r.row_date }}</td>
-          {% for col in custom_cols %}
-            <td>{{ r.data.get(col.id|string, '-') }}</td>
-          {% endfor %}
-          <td>
-            <form method="POST" action="{{ url_for('delete_custom_row', row_id=r.id) }}" style="display:inline;">
-              <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Delete this row?');">Del</button>
-            </form>
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="{{ custom_cols|length + 2 }}" style="text-align:center; color:var(--muted);">No custom register rows yet.</td>
-        </tr>
+    <!-- Add Custom Row Form -->
+    {% if custom_cols %}
+    <form method="POST" action="{{ url_for('add_custom_row') }}" style="margin-bottom: 14px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1;">
+      <div class="form-grid">
+        <div>
+          <label>Date / दिनांक</label>
+          <input type="date" name="row_date" value="{{ today_str }}" />
+        </div>
+        {% for col in custom_cols %}
+        <div>
+          <label>{{ col.name_en }} {% if col.name_hi %}/ {{ col.name_hi }}{% endif %}</label>
+          <input type="{{ col.col_type }}" step="any" name="col_{{ col.id }}" />
+        </div>
         {% endfor %}
-      </tbody>
-    </table>
+      </div>
+      <div style="margin-top: 10px;">
+        <button type="submit" class="btn btn-success btn-sm">+ Save Custom Row (एंट्री जोड़ें)</button>
+      </div>
+    </form>
+    {% endif %}
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            {% for col in custom_cols %}
+              <th>{{ col.name_en }}{% if col.name_hi %}<br><small>{{ col.name_hi }}</small>{% endif %}</th>
+            {% endfor %}
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in custom_rows %}
+          <tr>
+            <td>{{ r.row_date }}</td>
+            {% for col in custom_cols %}
+              <td>{{ r.data.get(col.id|string, '-') }}</td>
+            {% endfor %}
+            <td>
+              <form method="POST" action="{{ url_for('delete_custom_row', row_id=r.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Delete this row?');">Del</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="{{ custom_cols|length + 2 }}" style="text-align:center; color:var(--muted);">No custom register rows yet.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
-<!-- PASSWORD SET / CHANGE SECTION -->
-<div class="card" id="password-settings">
-  <div class="card-header">🔑 पासवर्ड बदलें / Set or Change Account Password</div>
-  <form method="POST" action="{{ url_for('change_password') }}" class="form-grid" style="align-items: end;">
-    <div>
-      <label>Current Password / पुराना पासवर्ड</label>
-      <input type="password" name="current_password" required />
-    </div>
-    <div>
-      <label>New Password / नया पासवर्ड</label>
-      <input type="password" name="new_password" minlength="6" required />
-    </div>
-    <div>
-      <label>Confirm New Password / पुष्टि करें</label>
-      <input type="password" name="confirm_password" minlength="6" required />
-    </div>
-    <div>
-      <button type="submit" class="btn btn-navy" style="width: 100%;">Update Password</button>
-    </div>
-  </form>
+<!-- 3. PASSWORD SET / CHANGE SECTION (HIDDEN BY DEFAULT UNTIL CLICKED) -->
+<div id="secPasswordChanger" style="display: none;">
+  <div class="card" id="password-settings">
+    <div class="card-header">🔑 पासवर्ड बदलें / Set or Change Account Password</div>
+    <form method="POST" action="{{ url_for('change_password') }}" class="form-grid" style="align-items: end;">
+      <div>
+        <label>Current Password / पुराना पासवर्ड</label>
+        <input type="password" name="current_password" required />
+      </div>
+      <div>
+        <label>New Password / नया पासवर्ड</label>
+        <input type="password" name="new_password" minlength="6" required />
+      </div>
+      <div>
+        <label>Confirm New Password / पुष्टि करें</label>
+        <input type="password" name="confirm_password" minlength="6" required />
+      </div>
+      <div>
+        <button type="submit" class="btn btn-navy" style="width: 100%;">Update Password</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script>
@@ -484,5 +527,34 @@
     document.getElementById("calcBalance").textContent = "₹" + balance.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
   autoCalc();
+
+  function openHomeSection(sectionId) {
+    const el = document.getElementById(sectionId);
+    if (!el) return;
+    el.style.display = "block";
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function toggleHomeSection(sectionId) {
+    const el = document.getElementById(sectionId);
+    if (!el) return;
+    const willOpen = el.style.display === "none";
+    el.style.display = willOpen ? "block" : "none";
+    if (willOpen) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("q") || params.get("status") || params.get("date")) {
+      document.getElementById("secSavedDispatch").style.display = "block";
+    }
+    if (window.location.hash === "#custom-register") {
+      openHomeSection("secCustomRegister");
+    } else if (window.location.hash === "#password-settings") {
+      openHomeSection("secPasswordChanger");
+    }
+  });
 </script>
 {% endblock %}
