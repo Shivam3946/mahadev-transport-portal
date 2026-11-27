@@ -214,6 +214,7 @@ class PaymentVoucher(db.Model):
     vehicles_summary = db.Column(db.Text, default="")
     payload_json = db.Column(db.Text, nullable=False)
     is_archived = db.Column(db.Boolean, default=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
@@ -282,6 +283,53 @@ def to_float(val, default=0.0):
         return float(val)
     except ValueError:
         return default
+
+
+def _compute_voucher_totals(routes_list):
+    total_deduct = 0.0
+    total_net = 0.0
+    route_names = []
+    vehicle_nos = []
+
+    for grp in (routes_list or []):
+        r_name = (grp.get("route") or "").strip()
+        m_name = (grp.get("material") or "").strip()
+        if r_name or m_name:
+            route_names.append(f"{r_name or '-'} ({m_name})" if m_name else r_name)
+
+        for row in (grp.get("rows") or []):
+            veh = (row.get("veh") or "").strip()
+            if veh:
+                vehicle_nos.append(veh)
+
+            cqty = to_float(row.get("cqty"))
+            rqty = to_float(row.get("rqty"))
+            raw_fqty = str(row.get("fqty") if row.get("fqty") is not None else "").strip()
+            fqty = to_float(raw_fqty) if raw_fqty != "" else (rqty if rqty > 0 else cqty)
+            rate = to_float(row.get("rate"))
+
+            samt = to_float(row.get("samt"))
+            bilty = to_float(row.get("bilty"))
+            adv = to_float(row.get("adv"))
+            party_adv = to_float(row.get("party_adv"))
+            trans = to_float(row.get("trans"))
+            fuel = to_float(row.get("fuel"))
+            gps_amt = to_float(row.get("gps_amt"))
+            tarpaulin = to_float(row.get("tarpaulin"))
+
+            freight_amt = fqty * rate
+            row_deduct = samt + bilty + adv + party_adv + trans + fuel + gps_amt + tarpaulin
+            row_net = freight_amt - row_deduct
+
+            total_deduct += row_deduct
+            total_net += row_net
+
+    return (
+        round(total_deduct, 2),
+        round(total_net, 2),
+        ", ".join(dict.fromkeys(route_names)),
+        ", ".join(dict.fromkeys(vehicle_nos)),
+    )
 
 
 def next_serial_number() -> int:
@@ -631,6 +679,8 @@ def print_challan(entry_id):
     return render_template("print_challan.html", entry=entry)
 
 
+# -------------------- PAYMENT VOUCHER ROUTES --------------------
+
 @app.route("/payment-voucher-form", methods=["GET"])
 @login_required
 def payment_voucher_form():
@@ -662,8 +712,8 @@ def payment_voucher_form():
                 filtered.append(v)
         all_vouchers = filtered
 
-    period_total_payable = sum((v.net_payable or 0.0) for v in all_vouchers)
-    period_total_deduct = sum((v.total_deduct or 0.0) for v in all_vouchers)
+    period_total_payable = round(sum((v.net_payable or 0.0) for v in all_vouchers), 2)
+    period_total_deduct = round(sum((v.total_deduct or 0.0) for v in all_vouchers), 2)
 
     return render_template(
         "payment_voucher_form.html",
@@ -681,66 +731,69 @@ def payment_voucher_form():
 @app.route("/payment-voucher/save", methods=["POST"])
 @login_required
 def save_payment_voucher():
-    data = request.get_json(silent=True) or {}
-    voucher_id = data.get("voucher_id")
+    try:
+        data = request.get_json(silent=True) or {}
+        raw_vid = data.get("voucher_id")
+        voucher_id = int(raw_vid) if str(raw_vid or "").strip().isdigit() else None
 
-    routes_list = data.get("routes") or []
-    route_names = []
-    vehicle_nos = []
-    for grp in routes_list:
-        r_name = (grp.get("route") or "").strip()
-        m_name = (grp.get("material") or "").strip()
-        if r_name or m_name:
-            route_names.append(f"{r_name or '-'} ({m_name})" if m_name else r_name)
-        for row in (grp.get("rows") or []):
-            veh = (row.get("veh") or "").strip()
-            if veh:
-                vehicle_nos.append(veh)
+        routes_list = data.get("routes") or []
+        calc_deduct, calc_net, routes_sum, vehicles_sum = _compute_voucher_totals(routes_list)
 
-    if voucher_id:
-        v = PaymentVoucher.query.get(int(voucher_id))
-        if not v:
-            return jsonify({"ok": False, "error": "Voucher not found"}), 404
-    else:
-        v = PaymentVoucher()
-        db.session.add(v)
+        if voucher_id is not None:
+            v = db.session.get(PaymentVoucher, voucher_id)
+            if not v:
+                return jsonify({"ok": False, "error": "Voucher not found"}), 404
+        else:
+            v = PaymentVoucher()
+            db.session.add(v)
 
-    v.voucher_no = (data.get("voucher_no") or "").strip()
-    v.voucher_date = (data.get("voucher_date") or "").strip()
-    v.debited_to = (data.get("debited_to") or "MAHADEV TRANSPORT").strip()
-    v.pan_no = (data.get("pan_no") or "").strip()
-    v.top_bank = (data.get("top_bank") or "").strip()
-    v.top_ac = (data.get("top_ac") or "").strip()
-    v.ifsc_code = (data.get("ifsc_code") or "").strip()
-    v.rupees_words = (data.get("rupees_words") or "").strip()
-    v.bot_bank = (data.get("bot_bank") or "").strip()
-    v.bot_ac = (data.get("bot_ac") or "").strip()
-    v.cheque_no = (data.get("cheque_no") or "").strip()
-    v.cheque_date = (data.get("cheque_date") or "").strip()
-    v.total_deduct = float(data.get("total_deduct") or 0.0)
-    v.net_payable = float(data.get("net_payable") or 0.0)
-    v.routes_summary = ", ".join(dict.fromkeys(route_names))
-    v.vehicles_summary = ", ".join(dict.fromkeys(vehicle_nos))
-    v.payload_json = json.dumps(data, ensure_ascii=False)
+        data["total_deduct"] = calc_deduct
+        data["net_payable"] = calc_net
 
-    db.session.commit()
-    return jsonify({"ok": True, "voucher_id": v.id})
+        v.voucher_no = (data.get("voucher_no") or "").strip()
+        v.voucher_date = (data.get("voucher_date") or "").strip()
+        v.debited_to = (data.get("debited_to") or "MAHADEV TRANSPORT").strip()
+        v.pan_no = (data.get("pan_no") or "").strip()
+        v.top_bank = (data.get("top_bank") or "").strip()
+        v.top_ac = (data.get("top_ac") or "").strip()
+        v.ifsc_code = (data.get("ifsc_code") or "").strip()
+        v.rupees_words = (data.get("rupees_words") or "").strip()
+        v.bot_bank = (data.get("bot_bank") or "").strip()
+        v.bot_ac = (data.get("bot_ac") or "").strip()
+        v.cheque_no = (data.get("cheque_no") or "").strip()
+        v.cheque_date = (data.get("cheque_date") or "").strip()
+        v.total_deduct = calc_deduct
+        v.net_payable = calc_net
+        v.routes_summary = routes_sum
+        v.vehicles_summary = vehicles_sum
+        v.payload_json = json.dumps(data, ensure_ascii=False)
+
+        db.session.commit()
+        return jsonify({
+            "ok": True,
+            "voucher_id": v.id,
+            "total_deduct": calc_deduct,
+            "net_payable": calc_net,
+        })
+    except Exception as exc:
+        db.session.rollback()
+        return jsonify({"ok": False, "error": str(exc)}), 500
 
 
 @app.route("/payment-voucher/<int:voucher_id>/archive", methods=["POST"])
 @login_required
 def toggle_archive_payment_voucher(voucher_id):
-    v = PaymentVoucher.query.get_or_404(voucher_id)
+    v = db.get_or_404(PaymentVoucher, voucher_id)
     v.is_archived = not bool(v.is_archived)
     db.session.commit()
     flash("Voucher archive status updated.", "success")
-    return redirect(url_for("payment_voucher_form", tab="archived" if not v.is_archived else "active"))
+    return redirect(url_for("payment_voucher_form", tab="archived" if v.is_archived else "active"))
 
 
 @app.route("/payment-voucher/<int:voucher_id>/delete", methods=["POST"])
 @login_required
 def delete_payment_voucher(voucher_id):
-    v = PaymentVoucher.query.get_or_404(voucher_id)
+    v = db.get_or_404(PaymentVoucher, voucher_id)
     tab = "archived" if v.is_archived else "active"
     db.session.delete(v)
     db.session.commit()
