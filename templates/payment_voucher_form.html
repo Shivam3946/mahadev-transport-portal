@@ -36,6 +36,10 @@
       font-size: 0.85rem;
       display: inline-block;
     }
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
     .btn-sm { padding: 5px 10px; font-size: 0.76rem; }
     .btn-navy { background: #0f294a; color: #fff; }
     .btn-crimson { background: #b91c1c; color: #fff; }
@@ -394,9 +398,13 @@
   <div class="toolbar">
     <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
       <a href="{{ url_for('dashboard') }}" class="btn btn-outline">← Dashboard</a>
+      <button type="button" onclick="stepBack()" id="topBackBtn" class="btn btn-outline" disabled>⬅️ Back Step</button>
+      <button type="button" onclick="stepForward()" id="topForwardBtn" class="btn btn-outline" disabled>➡️ Forward</button>
+      <button type="button" onclick="undoLastDeleteOrStep()" id="topUndoBtn" class="btn btn-amber" disabled>↩️ Undo Delete</button>
       <button type="button" onclick="addVehicleToLastGroup()" class="btn btn-green">+ Add Vehicle Row (Unlimited)</button>
       <button type="button" onclick="addRouteGroup()" class="btn btn-navy">+ Add Route Section</button>
       <button type="button" onclick="startNewVoucher()" class="btn btn-outline">➕ New / Clear</button>
+      <span id="stepIndicatorBadge" style="font-size: 0.8rem; font-weight: 800; color: #0f294a;">Step: 1 / 1</span>
       <span id="editingBadge" style="font-size: 0.8rem; font-weight: 800; color: #b45309;">Mode: New Voucher</span>
       <span id="totalRowBadge" style="font-size: 0.8rem; font-weight: 800; color: #0f294a;">Vehicles: 1</span>
     </div>
@@ -413,8 +421,14 @@
 
   <div class="editor-box">
     <div class="editor-head">
-      <span>📝 Voucher Details (सभी फ़ील्ड व Party Advance / GPS Amount / Tarpaulin 100% Optional · Unlimited Edits)</span>
+      <span>📝 Voucher Details (सभी फ़ील्ड व Party Advance / GPS Amount / Tarpaulin 100% Optional · Delete + Undo + Step Back)</span>
       <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button type="button" onclick="stepBack()" id="editorBackBtn" class="btn btn-outline" style="padding: 5px 11px; font-size: 0.78rem;" disabled>
+          ⬅️ Back Step
+        </button>
+        <button type="button" onclick="undoLastDeleteOrStep()" id="editorUndoBtn" class="btn btn-amber" style="padding: 5px 11px; font-size: 0.78rem;" disabled>
+          ↩️ Undo Delete
+        </button>
         <button type="button" id="editorSaveBtn" onclick="saveVoucherOnly()" class="btn btn-navy" style="padding: 5px 11px; font-size: 0.78rem;">
           💾 Save Voucher
         </button>
@@ -486,6 +500,12 @@
       <button type="button" onclick="addRouteGroup()" class="btn btn-crimson">
         + Add Another Route Section
       </button>
+      <button type="button" onclick="stepBack()" id="bottomBackBtn" class="btn btn-outline" disabled>
+        ⬅️ Back Step
+      </button>
+      <button type="button" onclick="undoLastDeleteOrStep()" id="bottomUndoBtn" class="btn btn-amber" disabled>
+        ↩️ Undo Delete
+      </button>
       <button type="button" id="bottomSaveBtn" onclick="saveVoucherOnly()" class="btn btn-navy">
         💾 Save / Update Voucher
       </button>
@@ -507,9 +527,10 @@
         </div>
       </div>
 
+      <!-- Apne dono mobile numbers yahan daal dein -->
       <div class="mob-corner">
-        <div><strong>Mob. No.: 8873257377</strong></div>
-        <div><strong>Mob. No.:8587835564</strong></div>
+        <div><strong>Mob. No.: XXXXXXXXXX</strong></div>
+        <div><strong>Mob. No.: XXXXXXXXXX</strong></div>
       </div>
     </div>
 
@@ -711,6 +732,11 @@
     let latestTotals = { totalDeduct: 0, netPayable: 0 };
     let renderRafId = null;
 
+    // Step-by-step history stack: [step0, step1, step2, ...]
+    const stepHistory = [];
+    let stepCursor = -1;
+    let lastDeletedSnapshot = null;
+
     function escAttr(s) {
       return String(s ?? "")
         .replace(/&/g, "&amp;")
@@ -731,6 +757,136 @@
       if (!raw) return null;
       const parsed = parseInt(raw, 10);
       return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    }
+
+    function refreshStepControls() {
+      const canBack = stepCursor > 0;
+      const canForward = stepCursor >= 0 && stepCursor < stepHistory.length - 1;
+      const canUndoDelete = Boolean(lastDeletedSnapshot) || canBack;
+
+      ["topBackBtn", "editorBackBtn", "bottomBackBtn"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = !canBack;
+      });
+      ["topForwardBtn"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = !canForward;
+      });
+      ["topUndoBtn", "editorUndoBtn", "bottomUndoBtn"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = !canUndoDelete;
+      });
+
+      const badge = document.getElementById("stepIndicatorBadge");
+      if (badge) {
+        const totalSteps = Math.max(1, stepHistory.length);
+        const currentStep = Math.max(1, stepCursor + 1);
+        badge.textContent = `Step: ${currentStep} / ${totalSteps}`;
+      }
+    }
+
+    function captureCurrentStateJson() {
+      return JSON.stringify(collectVoucherPayload());
+    }
+
+    function resetStepHistoryToCurrent() {
+      stepHistory.length = 0;
+      stepHistory.push(captureCurrentStateJson());
+      stepCursor = 0;
+      lastDeletedSnapshot = null;
+      refreshStepControls();
+    }
+
+    function recordBeforeStepChange(isDeleteAction = false) {
+      if (stepCursor === -1) {
+        stepHistory.push(captureCurrentStateJson());
+        stepCursor = 0;
+      }
+      const snap = captureCurrentStateJson();
+      if (isDeleteAction) {
+        lastDeletedSnapshot = snap;
+      }
+      if (stepCursor < stepHistory.length - 1) {
+        stepHistory.splice(stepCursor + 1);
+      }
+      if (stepHistory[stepCursor] !== snap) {
+        stepHistory.push(snap);
+        stepCursor = stepHistory.length - 1;
+      }
+      refreshStepControls();
+    }
+
+    function commitAfterStepChange() {
+      const snap = captureCurrentStateJson();
+      if (stepCursor < stepHistory.length - 1) {
+        stepHistory.splice(stepCursor + 1);
+      }
+      if (stepHistory[stepCursor] !== snap) {
+        stepHistory.push(snap);
+        stepCursor = stepHistory.length - 1;
+      }
+      refreshStepControls();
+    }
+
+    function applySnapshotJson(snapJson) {
+      if (!snapJson) return;
+      try {
+        const data = JSON.parse(snapJson);
+        document.getElementById("in_voucher_no").value = data.voucher_no || "";
+        document.getElementById("in_voucher_date").value = data.voucher_date || "";
+        document.getElementById("in_debited_to").value = data.debited_to || "MAHADEV TRANSPORT";
+        document.getElementById("in_pan").value = data.pan_no || "";
+        document.getElementById("in_top_bank").value = data.top_bank || "";
+        document.getElementById("in_top_ac").value = data.top_ac || "";
+        document.getElementById("in_ifsc").value = data.ifsc_code || "";
+        document.getElementById("in_words").value = data.rupees_words || "";
+        document.getElementById("in_bot_bank").value = data.bot_bank || "";
+        document.getElementById("in_bot_ac").value = data.bot_ac || "";
+        document.getElementById("in_cheque_no").value = data.cheque_no || "";
+        document.getElementById("in_cheque_date").value = data.cheque_date || "";
+
+        const container = document.getElementById("routeGroupsContainer");
+        container.innerHTML = "";
+        groupCounter = 0;
+
+        const routes = Array.isArray(data.routes) && data.routes.length ? data.routes : [{ route: "", material: "", rows: [] }];
+        routes.forEach(grp => addRouteGroup(grp.route || "", grp.material || "", grp.rows || [], true, true));
+        renderVoucher();
+      } catch (e) {}
+    }
+
+    function stepBack() {
+      if (stepCursor <= 0) return;
+      if (stepCursor === stepHistory.length - 1) {
+        const latestSnap = captureCurrentStateJson();
+        if (stepHistory[stepCursor] !== latestSnap) {
+          stepHistory.push(latestSnap);
+        }
+      }
+      stepCursor -= 1;
+      applySnapshotJson(stepHistory[stepCursor]);
+      refreshStepControls();
+    }
+
+    function stepForward() {
+      if (stepCursor < 0 || stepCursor >= stepHistory.length - 1) return;
+      stepCursor += 1;
+      applySnapshotJson(stepHistory[stepCursor]);
+      refreshStepControls();
+    }
+
+    function undoLastDeleteOrStep() {
+      if (lastDeletedSnapshot) {
+        const restoreSnap = lastDeletedSnapshot;
+        lastDeletedSnapshot = null;
+        applySnapshotJson(restoreSnap);
+        if (stepCursor > 0) {
+          stepCursor -= 1;
+        }
+        refreshStepControls();
+        return;
+      }
+      stepBack();
     }
 
     function updateSaveButtonLabels(voucherId) {
@@ -765,13 +921,38 @@
           <div><label>GPS Amt (Opt)</label><input type="number" step="0.01" class="f-gps" value="${escAttr(rowData.gps_amt || "")}" placeholder="0" oninput="scheduleRender()" /></div>
           <div><label>Tarpaulin (Opt)</label><input type="number" step="0.01" class="f-tarpaulin" value="${escAttr(rowData.tarpaulin || "")}" placeholder="0" oninput="scheduleRender()" /></div>
           <div style="display:flex; align-items:end;">
-            <button type="button" class="btn btn-outline" style="padding:5px 8px; font-size:0.74rem;" onclick="this.closest('.entry-grid').remove(); scheduleRender();">✕ Row</button>
+            <button type="button" class="btn btn-crimson" style="padding:5px 8px; font-size:0.74rem;" onclick="deleteVehicleRow(this)">✕ Delete Row</button>
           </div>
         </div>
       `;
     }
 
-    function addRouteGroup(defaultRoute = "", defaultMaterial = "", rowsArray = null, skipRender = false) {
+    function deleteVehicleRow(btnEl) {
+      recordBeforeStepChange(true);
+      const rowGrid = btnEl.closest(".entry-grid");
+      const parentList = rowGrid ? rowGrid.parentElement : null;
+      if (rowGrid) rowGrid.remove();
+      if (parentList && parentList.querySelectorAll(".entry-grid").length === 0) {
+        parentList.insertAdjacentHTML("beforeend", createEntryRowHTML());
+      }
+      scheduleRender();
+      commitAfterStepChange();
+    }
+
+    function deleteRouteSection(btnEl) {
+      recordBeforeStepChange(true);
+      const sectionBox = btnEl.closest(".row-editor");
+      if (sectionBox) sectionBox.remove();
+      const container = document.getElementById("routeGroupsContainer");
+      if (container && container.querySelectorAll(".row-editor").length === 0) {
+        addRouteGroup("", "", null, true, true);
+      }
+      scheduleRender();
+      commitAfterStepChange();
+    }
+
+    function addRouteGroup(defaultRoute = "", defaultMaterial = "", rowsArray = null, skipRender = false, silentInit = false) {
+      if (!silentInit) recordBeforeStepChange(false);
       groupCounter += 1;
       const id = groupCounter;
       const box = document.createElement("div");
@@ -782,7 +963,7 @@
           <span>Route / Vehicle Section #${id}</span>
           <div>
             <button type="button" class="btn btn-navy" style="padding:4px 9px; font-size:0.75rem;" onclick="addEntryToGroup(${id})">+ Add Vehicle Row</button>
-            <button type="button" class="btn btn-crimson" style="padding:4px 9px; font-size:0.75rem;" onclick="this.closest('.row-editor').remove(); scheduleRender();">Remove Section</button>
+            <button type="button" class="btn btn-crimson" style="padding:4px 9px; font-size:0.75rem;" onclick="deleteRouteSection(this)">🗑️ Delete Route</button>
           </div>
         </div>
         <div class="input-grid" style="margin-bottom: 6px;">
@@ -804,14 +985,19 @@
       } else {
         list.insertAdjacentHTML("beforeend", createEntryRowHTML());
       }
-      if (!skipRender) scheduleRender();
+      if (!skipRender) {
+        scheduleRender();
+        commitAfterStepChange();
+      }
     }
 
     function addEntryToGroup(groupId) {
       const grp = document.querySelector(`.row-editor[data-group-id="${groupId}"] .entries-list`);
       if (grp) {
+        recordBeforeStepChange(false);
         grp.insertAdjacentHTML("beforeend", createEntryRowHTML());
         scheduleRender();
+        commitAfterStepChange();
       }
     }
 
@@ -821,10 +1007,12 @@
         addRouteGroup();
         return;
       }
+      recordBeforeStepChange(false);
       const lastGroup = groups[groups.length - 1];
       const list = lastGroup.querySelector(".entries-list");
       list.insertAdjacentHTML("beforeend", createEntryRowHTML());
       scheduleRender();
+      commitAfterStepChange();
     }
 
     function numVal(el) { return el ? (parseFloat(el.value) || 0) : 0; }
@@ -1165,8 +1353,9 @@
       groupCounter = 0;
 
       const routes = Array.isArray(data.routes) && data.routes.length ? data.routes : [{ route: "", material: "", rows: [] }];
-      routes.forEach(grp => addRouteGroup(grp.route || "", grp.material || "", grp.rows || [], true));
+      routes.forEach(grp => addRouteGroup(grp.route || "", grp.material || "", grp.rows || [], true, true));
       renderVoucher();
+      resetStepHistoryToCurrent();
 
       const target = scrollToPreviewOnly
         ? document.getElementById("voucherPrintableArea")
@@ -1175,6 +1364,7 @@
     }
 
     function startNewVoucher() {
+      recordBeforeStepChange(false);
       document.getElementById("in_voucher_id").value = "";
       document.getElementById("editingBadge").textContent = "Mode: New Voucher";
       updateSaveButtonLabels("");
@@ -1185,7 +1375,9 @@
       });
       document.getElementById("routeGroupsContainer").innerHTML = "";
       groupCounter = 0;
-      addRouteGroup();
+      addRouteGroup("", "", null, true, true);
+      scheduleRender();
+      commitAfterStepChange();
     }
 
     document.querySelectorAll(".view-voucher-btn").forEach(btn => {
@@ -1210,7 +1402,9 @@
       }
     });
 
-    addRouteGroup();
+    addRouteGroup("", "", null, true, true);
+    renderVoucher();
+    resetStepHistoryToCurrent();
   </script>
 </body>
 </html>
